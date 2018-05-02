@@ -25,6 +25,12 @@ var tests = []testanspair{
 		output: []byte(""),
 	},
 	testanspair{
+		name:   "No program with comments and bad characters",
+		cmds:   "\n # ignore <.>[]+- everything here\nNothing to run here  \n#++++++++++++++++++++++++++++++++++++++++++.",
+		input:  []byte(""),
+		output: []byte(""),
+	},
+	testanspair{
 		name:   "Echo four bytes manually",
 		cmds:   ",>,>,>,<<<.>.>.>.",
 		input:  []byte("abcd"),
