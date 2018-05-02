@@ -87,10 +87,12 @@ type BFProgram struct {
 	dataptr  uint64
 	commands []BFCmd
 	data     []byte
+	input    io.Reader
+	output   io.Writer
 
-	jumpstack []uint64
-	fwdjump   map[uint64]uint64
-	revjump   map[uint64]uint64
+	jumpstack    []uint64
+	fwdjump      map[uint64]uint64
+	revjump      map[uint64]uint64
 }
 
 func (p *BFProgram) jumplen() uint64 {
@@ -105,13 +107,20 @@ func (p *BFProgram) jumppop() uint64 {
 	return cmdptr
 }
 
-func NewBFProgram(commandssize, datasize uint64) *BFProgram {
+func NewBFProgram(initialcommandssize, initialdatasize uint64) *BFProgram {
+	p := NewIOBFProgram(initialcommandssize, initialdatasize, os.Stdin, os.Stdout)
+	return p
+}
+
+func NewIOBFProgram(initialcommandssize, initialdatasize uint64, input io.Reader, output io.Writer) *BFProgram {
 	p := new(BFProgram)
-	p.commands = make([]BFCmd, 0, commandssize)
-	p.data = make([]byte, datasize)
+	p.commands = make([]BFCmd, 0, initialcommandssize)
+	p.data = make([]byte, initialdatasize)
 	p.jumpstack = make([]uint64, 0, defaultJumpStackSize)
 	p.fwdjump = make(map[uint64]uint64)
 	p.revjump = make(map[uint64]uint64)
+	p.input = input
+	p.output = output
 	return p
 }
 
@@ -228,7 +237,7 @@ func (p *BFProgram) RunStep() (bool, error) {
 	case BFCmdInputByte:
 		var b [1]byte
 		for {
-			n, err := os.Stdin.Read(b[:])
+			n, err := p.input.Read(b[:])
 			if err != nil {
 				return false, ErrReadError
 			}
@@ -239,7 +248,13 @@ func (p *BFProgram) RunStep() (bool, error) {
 		p.data[p.dataptr] = b[0]
 
 	case BFCmdOutputByte:
-		fmt.Print(string(p.data[p.dataptr]))
+		n, err := p.output.Write(p.data[p.dataptr : p.dataptr+1])
+		if err != nil {
+			return false, ErrWriteError
+		}
+		if n != 1 {
+			return false, ErrWriteError
+		}
 	case BFCmdLoopStart:
 		if p.data[p.dataptr] == 0 {
 			p.cmdptr = p.fwdjump[p.cmdptr]
