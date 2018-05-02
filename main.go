@@ -18,7 +18,7 @@ func BFRun(cmd *cobra.Command, args []string) {
 
 	finfo, err := f.Stat()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to stat file \"%s\": %\nv", filename, err)
+		fmt.Fprintf(os.Stderr, "Failed to stat file \"%s\": %v\n", filename, err)
 		os.Exit(1)
 	}
 
