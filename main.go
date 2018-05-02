@@ -31,7 +31,8 @@ func BFRun(cmd *cobra.Command, args []string) {
 	prgm.Reset()
 	if err := prgm.Run(); err != nil {
 		fmt.Println(err)
-	} else {
+	}
+	if debugEnabled {
 		fmt.Println("Program terminated")
 	}
 }
