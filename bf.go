@@ -257,8 +257,6 @@ func (p *BFProgram) RunStep() (bool, error) {
 }
 
 func (p *BFProgram) Run() error {
-	defer fmt.Println("")
-
 	for finished, err := p.RunStep(); !finished; finished, err = p.RunStep() {
 		if err != nil {
 			return err
