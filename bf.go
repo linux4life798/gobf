@@ -128,6 +128,30 @@ func NewIOBFProgram(initialcommandssize, initialdatasize uint64, input io.Reader
 	return p
 }
 
+func (p *BFProgram) Clone() *BFProgram {
+	pnew := new(BFProgram)
+	pnew.commands = make([]BFCmd, 0, len(p.commands))
+	pnew.commands = append(pnew.commands, p.commands...)
+	pnew.data = make([]byte, len(p.data))
+	pnew.data = append(pnew.data, p.data...)
+	pnew.jumpstack = make([]uint64, 0, len(p.jumpstack))
+	pnew.jumpstack = append(pnew.jumpstack, p.jumpstack...)
+	pnew.fwdjump = make(map[uint64]uint64)
+	for k, v := range p.fwdjump {
+		pnew.fwdjump[k] = v
+	}
+	pnew.revjump = make(map[uint64]uint64)
+	for k, v := range p.revjump {
+		pnew.revjump[k] = v
+	}
+	pnew.appendcmdptr = p.appendcmdptr
+	pnew.cmdptr = p.cmdptr
+	pnew.dataptr = p.dataptr
+	pnew.input = p.input
+	pnew.output = p.output
+	return pnew
+}
+
 func (p *BFProgram) AppendCommand(cmd rune) {
 	c := NewBFCmd(cmd)
 	if c == BFCmdUnknown {
