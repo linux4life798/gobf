@@ -106,6 +106,7 @@ func BenchmarkParsingSource(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+	// We don't want os read latency -- so read in entire file first
 	cmdsreader := bytes.NewReader(cmds)
 	var prgm *BFProgram
 
@@ -128,21 +129,83 @@ func BenchmarkRunningHelloWorld(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	fileinfo, err := cmdsfile.Stat()
-	if err != nil {
-		b.Fatal(err)
-	}
+	defer cmdsfile.Close()
 	input := bytes.NewReader([]byte{})
 
-	prgm := NewIOBFProgram(uint64(fileinfo.Size()), 0, input, ioutil.Discard)
+	prgm := NewIOBFProgram(0, 0, input, ioutil.Discard)
 	prgm.ReadCommands(cmdsfile)
+
+	prgms := make([]*BFProgram, b.N)
+	for i := range prgms {
+		prgms[i] = prgm.Clone()
+	}
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		prgm.Reset()
-		prgm.Run()
+		if err := prgms[i].Run(); err != nil {
+			b.Fatal(err)
+		}
 	}
 
 	runtime.KeepAlive(prgm)
+}
+
+func BenchmarkRunningPrintStar(b *testing.B) {
+	cmdsfile, err := os.Open("testprograms/printstar.b")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer cmdsfile.Close()
+	input := bytes.NewReader([]byte{})
+
+	prgm := NewIOBFProgram(0, 0, input, ioutil.Discard)
+	prgm.ReadCommands(cmdsfile)
+
+	prgms := make([]*BFProgram, b.N)
+	for i := range prgms {
+		prgms[i] = prgm.Clone()
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		if err := prgms[i].Run(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkReadFileAndRunPrintStar(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		cmdsfile, err := os.Open("testprograms/printstar.b")
+		if err != nil {
+			b.Fatal(err)
+		}
+		input := bytes.NewReader([]byte{})
+
+		prgm := NewIOBFProgram(0, 0, input, ioutil.Discard)
+		prgm.ReadCommands(cmdsfile)
+		cmdsfile.Close()
+		if err := prgm.Run(); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkReadFileAndRunHelloWorld(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		cmdsfile, err := os.Open("testprograms/printstar.b")
+		if err != nil {
+			b.Fatal(err)
+		}
+		input := bytes.NewReader([]byte{})
+
+		prgm := NewIOBFProgram(0, 0, input, ioutil.Discard)
+		prgm.ReadCommands(cmdsfile)
+		cmdsfile.Close()
+		if err := prgm.Run(); err != nil {
+			b.Fatal(err)
+		}
+	}
 }
