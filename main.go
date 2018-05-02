@@ -28,7 +28,6 @@ func BFRun(cmd *cobra.Command, args []string) {
 	if debugEnabled {
 		prgm.PrintProgram()
 	}
-	prgm.Reset()
 	if err := prgm.Run(); err != nil {
 		fmt.Println(err)
 	}

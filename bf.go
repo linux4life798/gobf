@@ -93,6 +93,7 @@ type BFProgram struct {
 	jumpstack    []uint64
 	fwdjump      map[uint64]uint64
 	revjump      map[uint64]uint64
+	appendcmdptr uint64
 }
 
 func (p *BFProgram) jumplen() uint64 {
@@ -130,19 +131,19 @@ func (p *BFProgram) AppendCommand(cmd rune) {
 		return
 	}
 	if c == BFCmdLoopStart {
-		p.jumppush(p.cmdptr)
+		p.jumppush(p.appendcmdptr)
 	}
 	if c == BFCmdLoopEnd {
 		if p.jumplen() == 0 {
 			panic("Unbalanced [ ]")
 		}
 		openptr := p.jumppop()
-		closedptr := p.cmdptr
+		closedptr := p.appendcmdptr
 		p.fwdjump[openptr] = closedptr
 		p.revjump[closedptr] = openptr
 	}
 	p.commands = append(p.commands, c)
-	p.cmdptr++
+	p.appendcmdptr++
 }
 
 func (p *BFProgram) AppendCommands(cmds ...rune) {
