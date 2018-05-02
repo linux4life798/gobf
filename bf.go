@@ -8,6 +8,12 @@ import (
 	"os"
 )
 
+var ErrUnknownCommand = errors.New("Error: Unknown command in program execution")
+var ErrJumpLocationExceedsCommands = errors.New("Error: Jump location exceeds command locations")
+var ErrDataPtr = errors.New("Error: Data pointer moved out of bounds (off the beginning)")
+var ErrReadError = errors.New("Error: Received read error during runtime")
+var ErrWriteError = errors.New("Error: Received write error during runtime")
+
 const (
 	BFCmdDataPtrIncrement BFCmd = iota
 	BFCmdDataPtrDecrement
@@ -185,11 +191,6 @@ func (p *BFProgram) Reset() {
 	p.dataptr = 0
 	p.data = make([]byte, len(p.data))
 }
-
-var ErrUnknownCommand = errors.New("Error: Unknown command in program execution")
-var ErrJumpLocationExceedsCommands = errors.New("Error: Jump location exceeds command locations")
-var ErrDataPtr = errors.New("Error: Data pointer moved out of bounds (off the beginning)")
-var ErrReadError = errors.New("Error: Received read error during runtime")
 
 func (p *BFProgram) RunStep() (bool, error) {
 
