@@ -114,6 +114,9 @@ func NewBFProgram(initialcommandssize, initialdatasize uint64) *BFProgram {
 }
 
 func NewIOBFProgram(initialcommandssize, initialdatasize uint64, input io.Reader, output io.Writer) *BFProgram {
+	if initialdatasize == 0 {
+		initialdatasize = 1
+	}
 	p := new(BFProgram)
 	p.commands = make([]BFCmd, 0, initialcommandssize)
 	p.data = make([]byte, initialdatasize)
