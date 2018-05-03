@@ -26,13 +26,15 @@ func BFRun(cmd *cobra.Command, args []string) {
 	prgm := NewBFProgram(uint64(fsize), defaultDataSize)
 	prgm.ReadCommands(f)
 	if debugEnabled {
-		prgm.PrintProgram()
+		fmt.Fprintf(os.Stderr, "Commands: ")
+		prgm.PrintProgram(os.Stderr)
+		fmt.Fprintf(os.Stderr, "\n")
 	}
 	if err := prgm.Run(); err != nil {
 		fmt.Println(err)
 	}
 	if debugEnabled {
-		fmt.Println("Program terminated")
+		fmt.Fprintln(os.Stderr, "Program terminated")
 	}
 }
 

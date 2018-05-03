@@ -215,12 +215,10 @@ func (p *BFProgram) ReadCommands(in io.Reader) {
 	}
 }
 
-func (p *BFProgram) PrintProgram() {
-	fmt.Printf("Commands: ")
+func (p *BFProgram) PrintProgram(outio io.Writer) {
 	for _, c := range p.commands {
-		fmt.Printf("%v", c)
+		fmt.Fprintf(outio, "%v", c)
 	}
-	fmt.Printf("\n")
 }
 
 func (p *BFProgram) Reset() {
