@@ -132,7 +132,7 @@ func TestTable(t *testing.T) {
 }
 
 func BenchmarkParsingSource(b *testing.B) {
-	cmds, err := ioutil.ReadFile("testprograms/helloworld.b")
+	cmds, err := ioutil.ReadFile("../testprograms/helloworld.b")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -155,7 +155,7 @@ func BenchmarkParsingSource(b *testing.B) {
 }
 
 func BenchmarkRunningHelloWorld(b *testing.B) {
-	cmdsfile, err := os.Open("testprograms/helloworld.b")
+	cmdsfile, err := os.Open("../testprograms/helloworld.b")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func BenchmarkRunningHelloWorld(b *testing.B) {
 }
 
 func BenchmarkRunningPrintStar(b *testing.B) {
-	cmdsfile, err := os.Open("testprograms/printstar.b")
+	cmdsfile, err := os.Open("../testprograms/printstar.b")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -208,7 +208,7 @@ func BenchmarkRunningPrintStar(b *testing.B) {
 
 func BenchmarkReadFileAndRunPrintStar(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		cmdsfile, err := os.Open("testprograms/printstar.b")
+		cmdsfile, err := os.Open("../testprograms/printstar.b")
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -225,7 +225,7 @@ func BenchmarkReadFileAndRunPrintStar(b *testing.B) {
 
 func BenchmarkReadFileAndRunHelloWorld(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		cmdsfile, err := os.Open("testprograms/printstar.b")
+		cmdsfile, err := os.Open("../testprograms/printstar.b")
 		if err != nil {
 			b.Fatal(err)
 		}
