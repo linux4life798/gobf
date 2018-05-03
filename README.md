@@ -1,4 +1,4 @@
-[![Godoc](https://godoc.org/github.com/linux4life798/gobf?status.png)](https://godoc.org/github.com/linux4life798/gobf)
+[![Godoc](https://godoc.org/github.com/linux4life798/gobf/gobflib?status.png)](https://godoc.org/github.com/linux4life798/gobf/gobflib)
 
 # GOBF
 This is a [BF][wikipedia-bf] interpreter written in Go.

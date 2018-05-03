@@ -4,7 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	. "github.com/linux4life798/gobf/gobflib"
 	"github.com/spf13/cobra"
+)
+
+const (
+	defaultDataSize = 100000
+	debugEnabled    = false
 )
 
 func BFRun(cmd *cobra.Command, args []string) {

@@ -1,4 +1,4 @@
-package main
+package gobflib
 
 import (
 	"bufio"
@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+)
+
+const (
+	defaultJumpStackSize = 10
 )
 
 var ErrUnknownCommand = errors.New("Error: Unknown command in program execution")
@@ -75,12 +79,6 @@ func (bfc BFCmd) String() (c string) {
 	}
 	return
 }
-
-const (
-	defaultDataSize      = 100000
-	defaultJumpStackSize = 10
-	debugEnabled         = false
-)
 
 type BFProgram struct {
 	cmdptr   uint64
@@ -228,11 +226,6 @@ func (p *BFProgram) Reset() {
 }
 
 func (p *BFProgram) RunStep() (bool, error) {
-
-	if debugEnabled {
-		fmt.Fprintf(os.Stderr, "PC: %d\n", p.cmdptr)
-	}
-
 	// Proper program termination
 	if p.cmdptr == uint64(len(p.commands)) {
 		return true, nil
