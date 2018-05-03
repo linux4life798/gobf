@@ -11,42 +11,55 @@ import (
 )
 
 type testanspair struct {
-	name   string
-	cmds   string
-	input  []byte
-	output []byte
+	name      string
+	cmds      string
+	input     []byte
+	output    []byte
+	testprint bool
 }
 
 var tests = []testanspair{
 	testanspair{
-		name:   "No program",
-		cmds:   "",
-		input:  []byte(""),
-		output: []byte(""),
+		name:      "No program",
+		cmds:      "",
+		input:     []byte(""),
+		output:    []byte(""),
+		testprint: true,
 	},
 	testanspair{
-		name:   "No program with comments and bad characters",
-		cmds:   "\n # ignore <.>[]+- everything here\nNothing to run here  \n#++++++++++++++++++++++++++++++++++++++++++.",
-		input:  []byte(""),
-		output: []byte(""),
+		name:      "No program with comments and bad characters",
+		cmds:      "\n # ignore <.>[]+- everything here\nNothing to run here  \n#++++++++++++++++++++++++++++++++++++++++++.",
+		input:     []byte(""),
+		output:    []byte(""),
+		testprint: false,
 	},
 	testanspair{
-		name:   "Echo four bytes manually",
-		cmds:   ",>,>,>,<<<.>.>.>.",
-		input:  []byte("abcd"),
-		output: []byte("abcd"),
+		name:      "Echo four bytes manually",
+		cmds:      ",>,>,>,<<<.>.>.>.",
+		input:     []byte("abcd"),
+		output:    []byte("abcd"),
+		testprint: true,
 	},
 	testanspair{
-		name:   "Echo four bytes using loop",
-		cmds:   ",>,>,>,<<<[.>]",
-		input:  []byte("abcd"),
-		output: []byte("abcd"),
+		name:      "Echo four bytes using loop",
+		cmds:      ",>,>,>,<<<[.>]",
+		input:     []byte("abcd"),
+		output:    []byte("abcd"),
+		testprint: true,
 	},
 	testanspair{
-		name:   "Print four stars",
-		cmds:   "++++++++++++++++++++++++++++++++++++++++++.... # ignore <.>[]+- everything here",
-		input:  []byte{},
-		output: []byte("****"),
+		name:      "Print four stars",
+		cmds:      "++++++++++++++++++++++++++++++++---+++++++++++++.... # ignore <.>[]+- everything here",
+		input:     []byte{},
+		output:    []byte("****"),
+		testprint: false,
+	},
+	testanspair{
+		name:      "Test PrintCommands",
+		cmds:      "++++++++++++++++++++++++++++++++---+++++++++++++....[-]><",
+		input:     []byte{},
+		output:    []byte("****"),
+		testprint: true,
 	},
 }
 
@@ -79,17 +92,34 @@ func RunTest(t *testing.T, tpair *testanspair) {
 	input := bytes.NewReader(tpair.input)
 	output := bytes.NewBuffer([]byte{})
 
-	prgm := NewIOBFProgram(1, 1, input, output)
+	// Create program context and parse commands
+	prgm := NewIOBFProgram(0, 0, input, output)
 	prgm.ReadCommands(bfcmds)
-	err := prgm.Run()
-	if err != nil {
+
+	// For the sake of testing Clone
+	prgm = prgm.Clone()
+
+	// Run the cloned program
+	if err := prgm.Run(); err != nil {
 		t.Fatal(err)
 	}
 
+	// Check the program output
 	if bytes.Compare(output.Bytes(), tpair.output) != 0 {
 		t.Log("answer bytes:", tpair.output, string(tpair.output))
 		t.Log("output bytes:", output.Bytes(), string(output.Bytes()))
 		t.Fatal("Output does not match expected output")
+	}
+
+	// Test the PrintProgram function
+	if tpair.testprint {
+		outb := bytes.NewBuffer([]byte{})
+		prgm.PrintProgram(outb)
+		if bytes.Compare(outb.Bytes(), []byte(tpair.cmds)) != 0 {
+			t.Log("printed bytes:", string(outb.Bytes()))
+			t.Log("output bytes:", tpair.cmds)
+			t.Fatal("Printed commands does not match inputted commands")
+		}
 	}
 }
 
