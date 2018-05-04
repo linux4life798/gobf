@@ -11,6 +11,10 @@ import (
 	"text/template"
 )
 
+const (
+	DefaultDataSize = 100000
+)
+
 const FileGoBody = "templates/body.go"
 
 type ILBlockStack []*ILBlock
@@ -206,7 +210,7 @@ func (p *BFProgram) GenGo(output io.Writer) error {
 	}
 
 	var body TemplateBody
-	body.InitialDataSize = 100
+	body.InitialDataSize = DefaultDataSize
 	body.Body = p.CreatILTree()
 	body.Body.Optimize()
 
