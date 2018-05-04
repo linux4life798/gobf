@@ -211,7 +211,7 @@ func (p *BFProgram) GenGo(output io.Writer) error {
 	}
 
 	var body TemplateBody
-	body.InitialDataSize = DefaultDataSizeg
+	body.InitialDataSize = DefaultDataSize
 	body.Body = p.CreatILTree()
 	body.Body.Optimize()
 
