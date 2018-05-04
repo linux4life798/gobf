@@ -5,8 +5,8 @@ This is a [BF][wikipedia-bf] interpreter and compiler written in Go.
 
 GoBF can simply run your BF program or compile it to a binary to run later.
 
-The commandline program currently support the `run`, `gengo`, and `compile`
-commands.
+The commandline program currently supports `run`, `gengo`, and `compile`
+actions.
 
 The generated code optimizer reduces redundant and repetitive commands,
 like data pointer moves or incrementing a data cell.
