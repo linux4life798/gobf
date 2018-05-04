@@ -18,20 +18,16 @@ func readb() {
 	os.Stdin.Read(data[datap : datap+1])
 }
 
-func datapinc() {
-	datap++
+func datapadd(delta int) {
+	datap += delta
+	if datap < 0 {
+		panic("Data pointer is out of bounds")
+	}
 	if datap >= len(data) {
-		newdata := make([]byte, len(data)*2)
+		newdata := make([]byte, datap*2)
 		copy(newdata, data)
 		data = newdata
 	}
-}
-
-func datapdec() {
-	if datap == 0 {
-		panic("Data pointer is out of bounds")
-	}
-	datap--
 }
 
 func dataadd(delta byte) {

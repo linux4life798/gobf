@@ -8,7 +8,10 @@ GoBF can simply run your BF program or compile it to a binary to run later.
 The commandline program currently support the `run`, `gengo`, and `compile`
 commands.
 
-# Future Work
-* COde generator optimizer
+The generated code optimizer reduces redundant and repetitive commands,
+like data pointer moves or incrementing a data cell.
+It coalesces multiple moves or data cell changes into one operation.
+Due to BF's repetitive nature, this typically increases the BF program's
+performance dramatically.
 
 [wikipedia-bf]: https://en.wikipedia.org/wiki/Brainfuck

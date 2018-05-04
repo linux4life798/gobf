@@ -7,6 +7,7 @@ import (
 	"io"
 	"os/exec"
 	"strings"
+	"sync"
 	"text/template"
 )
 
@@ -105,6 +106,42 @@ func (b *ILBlock) GetLast() *ILBlock {
 	return b.inner[len(b.inner)-1]
 }
 
+func (b *ILBlock) Optimize() {
+	// base condition
+	if b.typ != ILList && b.typ != ILLoop {
+		return
+	}
+
+	var wg sync.WaitGroup
+
+	oldinner := b.inner
+	b.inner = make([]*ILBlock, 0)
+
+	var lastb *ILBlock
+	for _, ib := range oldinner {
+		if lastb == nil {
+			lastb = ib
+			continue
+		}
+		if lastb.typ != ib.typ {
+			b.Append(lastb)
+			lastb = ib
+		} else {
+			lastb.param += ib.param
+		}
+
+		if ib.typ == ILList || ib.typ == ILLoop {
+			wg.Add(1)
+			go func(wg *sync.WaitGroup, ib *ILBlock) {
+				ib.Optimize()
+				wg.Done()
+			}(&wg, ib)
+		}
+	}
+	b.Append(lastb)
+	wg.Wait()
+}
+
 func (b *ILBlock) String() string {
 	var out strings.Builder
 	switch b.typ {
@@ -119,24 +156,18 @@ func (b *ILBlock) String() string {
 		}
 		out.WriteString("}\n")
 	case ILDataPtrAdd:
-		if b.param > 0 {
-			out.WriteString("datapinc()\n")
-		} else {
-			out.WriteString("datapdec()\n")
-		}
+		out.WriteString(fmt.Sprintf("datapadd(%d)\n", b.param))
 	case ILDataAdd:
 		delta := byte(b.param)
 		out.WriteString(fmt.Sprintf("dataadd(%v)\n", delta))
-		// out.WriteString("datainc()\n")
-		// if b.param > 0 {
-		// 	out.WriteString("datainc()\n")
-		// } else {
-		// 	out.WriteString("datadec()\n")
-		// }
 	case ILRead:
-		out.WriteString("readb()\n")
+		for i := int64(0); i < b.param; i++ {
+			out.WriteString("readb()\n")
+		}
 	case ILWrite:
-		out.WriteString("writeb()\n")
+		for i := int64(0); i < b.param; i++ {
+			out.WriteString("writeb()\n")
+		}
 	}
 	return out.String()
 }
@@ -177,6 +208,7 @@ func (p *BFProgram) GenGo(output io.Writer) error {
 	var body TemplateBody
 	body.InitialDataSize = 100
 	body.Body = p.CreatILTree()
+	body.Body.Optimize()
 
 	t := template.Must(template.New("body").Parse(mainfiletemplate))
 
