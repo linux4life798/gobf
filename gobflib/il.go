@@ -49,6 +49,7 @@ const (
 	ILWrite
 )
 
+// ILBlock represents an Intermediate Language Block of instruction(s)
 type ILBlock struct {
 	typ   ILBlockType
 	param int64
@@ -210,7 +211,7 @@ func (p *BFProgram) GenGo(output io.Writer) error {
 	}
 
 	var body TemplateBody
-	body.InitialDataSize = DefaultDataSize
+	body.InitialDataSize = DefaultDataSizeg
 	body.Body = p.CreatILTree()
 	body.Body.Optimize()
 
