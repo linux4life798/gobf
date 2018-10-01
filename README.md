@@ -1,4 +1,5 @@
 [![Godoc](https://godoc.org/github.com/linux4life798/gobf/gobflib?status.png)](https://godoc.org/github.com/linux4life798/gobf/gobflib)
+[![Build Status](https://travis-ci.org/linux4life798/gobf.svg?branch=master)](https://travis-ci.org/linux4life798/gobf)
 
 # GoBF
 This is a [BF][wikipedia-bf] interpreter and compiler written in Go.
