@@ -172,9 +172,7 @@ func (b *ILBlock) String() string {
 			out.WriteString("readb()\n")
 		}
 	case ILWrite:
-		for i := int64(0); i < b.param; i++ {
-			out.WriteString("writeb()\n")
-		}
+		out.WriteString(fmt.Sprintf("writeb(%v)\n", b.param))
 	}
 	return out.String()
 }

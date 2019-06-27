@@ -1,12 +1,13 @@
 package main
 
 import "os"
+import "bytes"
 
 var datap int
 var data []byte
 
-func writeb() {
-	os.Stdout.Write(data[datap : datap+1])
+func writeb(repeat int) {
+	os.Stdout.Write(bytes.Repeat(data[datap : datap+1], repeat))
 }
 
 func readb() {
