@@ -131,6 +131,17 @@ func TestTable(t *testing.T) {
 	}
 }
 
+func TestNoProgramIL(t *testing.T) {
+	input := bytes.NewBuffer([]byte{})
+	output := bytes.NewBuffer([]byte{})
+
+	// Create program context and parse commands
+	prgm := NewIOBFProgram(0, 0, input, output)
+	il := prgm.CreatILTree()
+	il.Optimize()
+	il.String()
+}
+
 func BenchmarkParsingSource(b *testing.B) {
 	cmds, err := ioutil.ReadFile("../testprograms/helloworld.b")
 	if err != nil {

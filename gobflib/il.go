@@ -143,7 +143,9 @@ func (b *ILBlock) Optimize() {
 			}(&wg, ib)
 		}
 	}
-	b.Append(lastb)
+	if lastb != nil {
+		b.Append(lastb)
+	}
 	wg.Wait()
 }
 
