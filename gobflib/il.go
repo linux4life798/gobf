@@ -160,7 +160,8 @@ type TemplateBody struct {
 
 func (p *BFProgram) CreatILTree() *ILBlock {
 	s := NewILBlockStack()
-	cur := NewILBlock(ILList)
+	ib := NewILBlock(ILList)
+	var cur = ib
 	for _, c := range p.commands {
 		if c == BFCmdLoopEnd {
 			cur = s.Pop()
@@ -175,7 +176,7 @@ func (p *BFProgram) CreatILTree() *ILBlock {
 			cur = b
 		}
 	}
-	return cur
+	return ib
 }
 
 func (p *BFProgram) GenGo(output io.Writer) error {
