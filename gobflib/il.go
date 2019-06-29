@@ -170,6 +170,47 @@ func (b *ILBlock) Optimize() {
 	wg.Wait()
 }
 
+// isPruneable uses a set of rules to determine id an ILBlock
+// node is able to be removed.
+func (b *ILBlock) isPruneable() bool {
+	if b == nil {
+		return true
+	}
+	switch b.typ {
+	case ILList:
+		if len(b.inner) == 0 {
+			return true
+		}
+	case ILDataPtrAdd, ILDataAdd, ILWrite:
+		if b.param == 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+// Prune removes all No-Operations that the Optimize step may have produced.
+// For example dataadd(0) or dataptradd(0)
+// This must be done depth first, to ensure that parent nodes will be pruned
+// after leaf nodes.
+// TODO: Parallelize
+func (b *ILBlock) Prune() {
+
+	if len(b.inner) == 0 {
+		return
+	}
+
+	oldinner := b.inner
+	b.inner = make([]*ILBlock, 0)
+	for _, ib := range oldinner {
+		ib.Prune()
+		if !ib.isPruneable() {
+			b.Append(ib)
+		}
+	}
+}
+
 func (b *ILBlock) String() string {
 	var out strings.Builder
 	switch b.typ {
@@ -236,6 +277,7 @@ func (p *BFProgram) GenGo(output io.Writer) error {
 	body.InitialDataSize = DefaultDataSize
 	body.Body = p.CreateILTree()
 	body.Body.Optimize()
+	body.Body.Prune()
 
 	t := template.Must(template.New("body").Parse(mainfiletemplate))
 
