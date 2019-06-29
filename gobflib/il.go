@@ -98,32 +98,29 @@ func (b *ILBlock) Optimize() {
 
 	var wg sync.WaitGroup
 
+	// rip through inner ILBlocks
 	oldinner := b.inner
 	b.inner = make([]*ILBlock, 0)
 
 	var lastb *ILBlock
 	for _, ib := range oldinner {
-		if lastb == nil {
-			lastb = ib
-			continue
-		}
-		if lastb.typ != ib.typ {
-			b.Append(lastb)
-			lastb = ib
-		} else {
-			lastb.param += ib.param
-		}
-
 		if ib.typ == ILList || ib.typ == ILLoop {
+			b.Append(ib)
 			wg.Add(1)
 			go func(wg *sync.WaitGroup, ib *ILBlock) {
 				ib.Optimize()
 				wg.Done()
 			}(&wg, ib)
+			lastb = nil
+		} else {
+			/* Combine DataAdds, DataPtrAdds, and WriteBs */
+			if lastb != nil && lastb.typ == ib.typ {
+				lastb.param += ib.param
+			} else {
+				b.Append(ib)
+				lastb = ib
+			}
 		}
-	}
-	if lastb != nil {
-		b.Append(lastb)
 	}
 	wg.Wait()
 }
