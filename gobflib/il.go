@@ -158,7 +158,7 @@ type TemplateBody struct {
 	Body            *ILBlock
 }
 
-func (p *BFProgram) CreatILTree() *ILBlock {
+func (p *BFProgram) CreateILTree() *ILBlock {
 	s := NewILBlockStack()
 	ib := NewILBlock(ILList)
 	var cur = ib
@@ -189,7 +189,7 @@ func (p *BFProgram) GenGo(output io.Writer) error {
 
 	var body TemplateBody
 	body.InitialDataSize = DefaultDataSize
-	body.Body = p.CreatILTree()
+	body.Body = p.CreateILTree()
 	body.Body.Optimize()
 
 	t := template.Must(template.New("body").Parse(mainfiletemplate))
