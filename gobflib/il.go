@@ -111,6 +111,30 @@ func (b *ILBlock) Dump(out io.Writer, indent int) {
 	}
 }
 
+// Equal recursively checks if the implicit ILBlock is identical to
+// ILBlock a.
+func (b *ILBlock) Equal(a *ILBlock) bool {
+	if (b == nil && a != nil) || (b != nil && a == nil) {
+		return false
+	}
+	if b.typ != a.typ {
+		return false
+	}
+	// requiring param to always be equal (even for ILList) is pretty strict
+	if b.param != a.param {
+		return false
+	}
+	if len(b.inner) != len(a.inner) {
+		return false
+	}
+	for i := range b.inner {
+		if !b.inner[i].Equal(a.inner[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 func (b *ILBlock) Optimize() {
 	// base condition
 	if b.typ != ILList && b.typ != ILLoop {
