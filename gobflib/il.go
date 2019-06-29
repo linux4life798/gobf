@@ -5,6 +5,7 @@ package gobflib
 import (
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -88,6 +89,25 @@ func (b *ILBlock) Append(bs ...*ILBlock) {
 
 func (b *ILBlock) GetLast() *ILBlock {
 	return b.inner[len(b.inner)-1]
+}
+
+func (b *ILBlock) Dump(out io.Writer, indent int) {
+	const indentWidth = 4
+	fmt.Fprintf(out, "%*s----------\n", indent*indentWidth, "")
+	if b == nil {
+		fmt.Fprintf(out, "%*s<nil>\n", indent*indentWidth, "")
+		return
+	}
+	fmt.Fprintf(out, "%*s|Type: %v\n", indent*indentWidth, "", b.typ)
+	fmt.Fprintf(out, "%*s|Param:%d\n", indent*indentWidth, "", b.param)
+	fmt.Fprintf(out, "%*s|Inner:\n", indent*indentWidth, "")
+	if b.inner == nil {
+		fmt.Fprintf(out, "%*s<nil>\n", (indent+1)*indentWidth, "")
+		return
+	}
+	for _, ib := range b.inner {
+		ib.Dump(out, indent+1)
+	}
 }
 
 func (b *ILBlock) Optimize() {
