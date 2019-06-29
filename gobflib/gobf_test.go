@@ -137,7 +137,7 @@ func TestNoProgramIL(t *testing.T) {
 
 	// Create program context and parse commands
 	prgm := NewIOBFProgram(0, 0, input, output)
-	il := prgm.CreatILTree()
+	il := prgm.CreateILTree()
 	il.Optimize()
 	il.String()
 }
