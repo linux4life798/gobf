@@ -133,7 +133,7 @@ func (b *ILBlock) String() string {
 			out.WriteString(b.inner[i].String())
 		}
 	case ILLoop:
-		out.WriteString("for ; data[datap] != 0; {\n")
+		out.WriteString("for data[datap] != 0 {\n")
 		for i := range b.inner {
 			out.WriteString(b.inner[i].String())
 		}

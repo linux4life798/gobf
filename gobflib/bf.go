@@ -80,6 +80,8 @@ func (bfc BFCmd) String() (c string) {
 	return
 }
 
+// BFProgram represents an active program state for a BF program using the
+// the native and unoptimized BF commands.
 type BFProgram struct {
 	cmdptr   uint64
 	dataptr  uint64
