@@ -1,4 +1,5 @@
 //go:generate ./genconsts.sh
+//go:generate stringer -type=ILBlockType
 
 package gobflib
 
