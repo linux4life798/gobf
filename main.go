@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 
@@ -16,8 +14,9 @@ import (
 
 const (
 	defaultDataSize = 100000
-	debugEnabled    = false
 )
+
+var debugEnabled *bool
 
 func BFRun(cmd *cobra.Command, args []string) {
 	filename := args[0]
@@ -37,7 +36,7 @@ func BFRun(cmd *cobra.Command, args []string) {
 	fsize := finfo.Size()
 	prgm := NewBFProgram(uint64(fsize), defaultDataSize)
 	prgm.ReadCommands(f)
-	if debugEnabled {
+	if *debugEnabled {
 		fmt.Fprintf(os.Stderr, "Commands: ")
 		prgm.PrintProgram(os.Stderr)
 		fmt.Fprintf(os.Stderr, "\n")
@@ -45,12 +44,16 @@ func BFRun(cmd *cobra.Command, args []string) {
 	if err := prgm.Run(); err != nil {
 		fmt.Println(err)
 	}
-	if debugEnabled {
+	if *debugEnabled {
 		fmt.Fprintln(os.Stderr, "Program terminated")
 	}
 }
 
 func BFGenGo(cmd *cobra.Command, args []string) {
+	flagOptimize, _ := cmd.Flags().GetBool("optimize")
+	flagPrune, _ := cmd.Flags().GetBool("prune")
+	flagVectorize, _ := cmd.Flags().GetBool("vectorize")
+
 	filename := args[0]
 	f, err := os.Open(filename)
 	if err != nil {
@@ -68,7 +71,7 @@ func BFGenGo(cmd *cobra.Command, args []string) {
 	fsize := finfo.Size()
 	prgm := NewBFProgram(uint64(fsize), defaultDataSize)
 	prgm.ReadCommands(f)
-	if debugEnabled {
+	if *debugEnabled {
 		fmt.Fprintf(os.Stderr, "Commands: ")
 		prgm.PrintProgram(os.Stderr)
 		fmt.Fprintf(os.Stderr, "\n")
@@ -85,8 +88,22 @@ func BFGenGo(cmd *cobra.Command, args []string) {
 	}
 
 	il := prgm.CreateILTree()
-	il.Optimize()
-	il.Prune()
+	if flagOptimize {
+		il.Optimize()
+	}
+	if flagPrune {
+		il.Prune()
+	}
+	if flagVectorize {
+		il.Vectorize()
+	}
+	// prune possible datapadd(0) after vector replace
+	if flagOptimize {
+		il.Optimize()
+	}
+	if flagPrune {
+		il.Prune()
+	}
 	err = lang.ILBlockToGo(il, output)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate Go: %v\n", err)
@@ -95,6 +112,10 @@ func BFGenGo(cmd *cobra.Command, args []string) {
 }
 
 func BFCompile(cmd *cobra.Command, args []string) {
+	flagOptimize, _ := cmd.Flags().GetBool("optimize")
+	flagPrune, _ := cmd.Flags().GetBool("prune")
+	flagVectorize, _ := cmd.Flags().GetBool("vectorize")
+
 	filename := args[0]
 	f, err := os.Open(filename)
 	if err != nil {
@@ -112,35 +133,33 @@ func BFCompile(cmd *cobra.Command, args []string) {
 	fsize := finfo.Size()
 	prgm := NewBFProgram(uint64(fsize), defaultDataSize)
 	prgm.ReadCommands(f)
-	if debugEnabled {
+	if *debugEnabled {
 		fmt.Fprintf(os.Stderr, "Commands: ")
 		prgm.PrintProgram(os.Stderr)
 		fmt.Fprintf(os.Stderr, "\n")
 	}
 
-	tempdir, err := ioutil.TempDir("", "gobfcompile")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create temp dir: %v\n", err)
-		os.Exit(1)
-	}
-
-	gofile, err := os.Create(tempdir + "/main.go")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create temp file: %v\n", err)
-		os.Exit(1)
-	}
-
 	il := prgm.CreateILTree()
-	il.Optimize()
-	il.Prune()
-	err = lang.ILBlockToGo(il, gofile)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to generate Go: %v\n", err)
-		os.Exit(1)
+	if flagOptimize {
+		il.Optimize()
+	}
+	if flagPrune {
+		il.Prune()
+	}
+	if flagVectorize {
+		il.Vectorize()
+	}
+	// prune possible datapadd(0) after vector replace
+	if flagOptimize {
+		il.Optimize()
+	}
+	if flagPrune {
+		il.Prune()
 	}
 
 	var outputfilename string
-
+	// If no output file specified, use basename (without extension)
+	// as the program binary.
 	if len(args) > 1 {
 		outputfilename = args[1]
 	} else {
@@ -150,23 +169,20 @@ func BFCompile(cmd *cobra.Command, args []string) {
 
 		// Sanity check
 		if basename == filename {
-			fmt.Fprintf(os.Stderr, "Error - Asked to overwrite original input fil\n")
+			fmt.Fprintf(os.Stderr, "Error - Asked to overwrite original input file\n")
 			os.Exit(1)
 		}
 
 		outputfilename = basename
 	}
 
-	gobuild := exec.Command("go", "build", "-o", outputfilename, gofile.Name())
-	err = gobuild.Start()
+	err, tempdir := lang.CompileIL(il, outputfilename, *debugEnabled)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to build binary from Go: %v\n", err)
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "Error - %v", err)
+		os.Exit(2)
 	}
-	err = gobuild.Wait()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to build binary from Go: %v\n", err)
-		os.Exit(1)
+	if *debugEnabled {
+		fmt.Println("TempDir:", tempdir)
 	}
 }
 
@@ -194,6 +210,10 @@ func main() {
 	}
 
 	var rootCmd = &cobra.Command{Use: "gobf"}
+	debugEnabled = rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
+	rootCmd.PersistentFlags().BoolP("optimize", "O", true, "Enable collapsing of repeat commands")
+	rootCmd.PersistentFlags().BoolP("prune", "P", true, "Enable pruning of dead commands")
+	rootCmd.PersistentFlags().BoolP("vectorize", "V", false, "Enable vectorizing of commands in a block")
 	rootCmd.AddCommand(cmdRun)
 	rootCmd.AddCommand(cmdGenGo)
 	rootCmd.AddCommand(cmdCompile)

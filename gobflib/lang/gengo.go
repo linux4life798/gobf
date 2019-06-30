@@ -4,6 +4,8 @@ package lang
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 	"os/exec"
 	"text/template"
 
@@ -107,4 +109,61 @@ tryagain:
 	}
 
 	return err
+}
+
+func CompileGo(infile, outfile string, debugenabled bool, gccgo bool) error {
+	var args = []string{"build"}
+	if gccgo {
+		args = append(args, "-compiler", "gccgo")
+	}
+	if debugenabled {
+		args = append(args, "-v", "-x")
+	}
+	args = append(args, "-o", outfile, infile)
+
+	gobuild := exec.Command("go", args...)
+	if err := gobuild.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to build binary from Go: %v\n", err)
+		return err
+	}
+	if err := gobuild.Wait(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to build binary from Go: %v\n", err)
+		return err
+	}
+	return nil
+}
+
+// If err is non-nil, the tempdir is preserved and returned
+// with the error
+func CompileIL(b *il.ILBlock, outfile string, debugenabled bool) (error, string) {
+	// Create temp directory for generated Go /tmp/gobfcompile########
+	tempdir, err := ioutil.TempDir("", "gobfcompile")
+	if err != nil {
+		return fmt.Errorf("Failed to create temp dir: %v", err), tempdir
+	}
+
+	// Create temp /tmp/gobfcompile########/main.go file
+	gofile, err := os.Create(tempdir + "/main.go")
+	if err != nil {
+		return fmt.Errorf("Failed to create temp file: %v", err), tempdir
+	}
+
+	// Generate the Go code
+	if err := ILBlockToGo(b, gofile); err != nil {
+		return fmt.Errorf("Failed to generate Go: %v", err), tempdir
+	}
+
+	// Compile the Go code to binary
+	if err := CompileGo(gofile.Name(), outfile, debugenabled, false); err != nil {
+		return fmt.Errorf("Failed to compile generated Go: %v", err), tempdir
+	}
+
+	if !debugenabled {
+		// Remove the temp directory if everything succeeded
+		if err := os.RemoveAll(tempdir); err != nil {
+			return err, tempdir
+		}
+	}
+
+	return nil, tempdir
 }
