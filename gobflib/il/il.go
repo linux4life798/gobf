@@ -198,7 +198,6 @@ type voverlay struct {
 }
 
 func (c *voverlay) dataadd(value byte) {
-
 	if c.ptrOff < 0 {
 		// must extend negatively
 		newLen := (-c.ptrOff) + len(c.vec.vec)
