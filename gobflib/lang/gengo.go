@@ -1,4 +1,4 @@
-// go:generate ./gen_template_consts.sh
+//go:generate ./gen_template_consts.bash
 package lang
 
 import (
@@ -31,22 +31,22 @@ func ilBlockGo(b *il.ILBlock, cout chan<- string) {
 			ilBlockGo(ib, cout)
 		}
 	case il.ILLoop:
-		cout <- "for data[datap] != 0 {\n"
+		cout <- "for data[datap] != 0 {"
 		for _, ib := range b.GetInner() {
 			ilBlockGo(ib, cout)
 		}
-		cout <- "}\n"
+		cout <- "}"
 	case il.ILDataPtrAdd:
-		cout <- fmt.Sprintf("datapadd(%d)\n", b.GetParam())
+		cout <- fmt.Sprintf("datapadd(%d)", b.GetParam())
 	case il.ILDataAdd:
 		delta := byte(b.GetParam())
-		cout <- fmt.Sprintf("dataadd(%v)\n", delta)
+		cout <- fmt.Sprintf("dataadd(%v)", delta)
 	case il.ILRead:
 		for i := int64(0); i < b.GetParam(); i++ {
-			cout <- "readb()\n"
+			cout <- "readb()"
 		}
 	case il.ILWrite:
-		cout <- fmt.Sprintf("writeb(%v)\n", b.GetParam())
+		cout <- fmt.Sprintf("writeb(%v)", b.GetParam())
 	}
 }
 

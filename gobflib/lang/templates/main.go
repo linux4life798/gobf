@@ -27,13 +27,12 @@ func datapadd(delta int) {
 }
 
 func dataadd(delta byte) {
-	data[datap]+=delta
+	data[datap] += delta
 }
 
 func main() {
 	data = make([]byte, {{ .InitialDataSize }})
 
-	{{ range .Body }}
-	{{ . }}
+	{{ range .Body }}{{ . }}
 	{{ end }}
 }
