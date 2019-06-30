@@ -35,11 +35,18 @@ func dataadd(delta byte) {
 	data[datap] += delta
 }
 
+func dataaddvector(vec []byte) {
+	var p = datap
+	for i := range vec {
+		data[p] += vec[i]
+		p++
+	}
+}
+
 func main() {
 	data = make([]byte, {{ .InitialDataSize }})
 
 	{{ range .Body }}{{ . }}
 	{{ end }}
-
 }
 `

@@ -47,6 +47,8 @@ func ilBlockGo(b *il.ILBlock, cout chan<- string) {
 		}
 	case il.ILWrite:
 		cout <- fmt.Sprintf("writeb(%v)", b.GetParam())
+	case il.ILDataAddVector:
+		cout <- fmt.Sprintf("dataaddvector(%#v)", b.GetVector())
 	}
 }
 
