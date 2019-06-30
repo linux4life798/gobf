@@ -1,4 +1,4 @@
-package gobflib
+package il
 
 import "testing"
 

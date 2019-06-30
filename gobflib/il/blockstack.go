@@ -1,4 +1,4 @@
-package gobflib
+package il
 
 type ILBlockStack []*ILBlock
 

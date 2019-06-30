@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/linux4life798/gobf/gobflib/il"
+	"github.com/linux4life798/gobf/gobflib/lang"
 )
 
 const (
@@ -18,74 +21,12 @@ var ErrDataPtr = errors.New("Error: Data pointer moved out of bounds (off the be
 var ErrReadError = errors.New("Error: Received read error during runtime")
 var ErrWriteError = errors.New("Error: Received write error during runtime")
 
-const (
-	BFCmdDataPtrIncrement BFCmd = iota
-	BFCmdDataPtrDecrement
-	BFCmdDataIncrement
-	BFCmdDataDecrement
-	BFCmdInputByte
-	BFCmdOutputByte
-	BFCmdLoopStart
-	BFCmdLoopEnd
-	BFCmdUnknown
-)
-
-type BFCmd byte
-
-func NewBFCmd(c rune) (bfc BFCmd) {
-	switch c {
-	case '>':
-		bfc = BFCmdDataPtrIncrement
-	case '<':
-		bfc = BFCmdDataPtrDecrement
-	case '+':
-		bfc = BFCmdDataIncrement
-	case '-':
-		bfc = BFCmdDataDecrement
-	case '.':
-		bfc = BFCmdOutputByte
-	case ',':
-		bfc = BFCmdInputByte
-	case '[':
-		bfc = BFCmdLoopStart
-	case ']':
-		bfc = BFCmdLoopEnd
-	default:
-		bfc = BFCmdUnknown
-	}
-	return
-}
-
-func (bfc BFCmd) String() (c string) {
-	switch bfc {
-	case BFCmdDataPtrIncrement:
-		c = ">"
-	case BFCmdDataPtrDecrement:
-		c = "<"
-	case BFCmdDataIncrement:
-		c = "+"
-	case BFCmdDataDecrement:
-		c = "-"
-	case BFCmdOutputByte:
-		c = "."
-	case BFCmdInputByte:
-		c = ","
-	case BFCmdLoopStart:
-		c = "["
-	case BFCmdLoopEnd:
-		c = "]"
-	default:
-		c = "unknown"
-	}
-	return
-}
-
 // BFProgram represents an active program state for a BF program using the
 // the native and unoptimized BF commands.
 type BFProgram struct {
 	cmdptr   uint64
 	dataptr  uint64
-	commands []BFCmd
+	commands []lang.BFCmd
 	data     []byte
 	input    io.Reader
 	output   io.Writer
@@ -118,7 +59,7 @@ func NewIOBFProgram(initialcommandssize, initialdatasize uint64, input io.Reader
 		initialdatasize = 1
 	}
 	p := new(BFProgram)
-	p.commands = make([]BFCmd, 0, initialcommandssize)
+	p.commands = make([]lang.BFCmd, 0, initialcommandssize)
 	p.data = make([]byte, initialdatasize)
 	p.jumpstack = make([]uint64, 0, defaultJumpStackSize)
 	p.fwdjump = make(map[uint64]uint64)
@@ -130,7 +71,7 @@ func NewIOBFProgram(initialcommandssize, initialdatasize uint64, input io.Reader
 
 func (p *BFProgram) Clone() *BFProgram {
 	pnew := new(BFProgram)
-	pnew.commands = make([]BFCmd, 0, len(p.commands))
+	pnew.commands = make([]lang.BFCmd, 0, len(p.commands))
 	pnew.commands = append(pnew.commands, p.commands...)
 	pnew.data = make([]byte, len(p.data))
 	pnew.data = append(pnew.data, p.data...)
@@ -153,14 +94,14 @@ func (p *BFProgram) Clone() *BFProgram {
 }
 
 func (p *BFProgram) AppendCommand(cmd rune) {
-	c := NewBFCmd(cmd)
-	if c == BFCmdUnknown {
+	c := lang.NewBFCmd(cmd)
+	if c == lang.BFCmdUnknown {
 		return
 	}
-	if c == BFCmdLoopStart {
+	if c == lang.BFCmdLoopStart {
 		p.jumppush(p.appendcmdptr)
 	}
-	if c == BFCmdLoopEnd {
+	if c == lang.BFCmdLoopEnd {
 		if p.jumplen() == 0 {
 			panic("Unbalanced [ ]")
 		}
@@ -238,7 +179,7 @@ func (p *BFProgram) RunStep() (bool, error) {
 	}
 
 	switch p.commands[p.cmdptr] {
-	case BFCmdDataPtrIncrement:
+	case lang.BFCmdDataPtrIncrement:
 		p.dataptr++
 		// expand data array if needed
 		if p.dataptr >= uint64(len(p.data)) {
@@ -246,16 +187,16 @@ func (p *BFProgram) RunStep() (bool, error) {
 			copy(newdata, p.data)
 			p.data = newdata
 		}
-	case BFCmdDataPtrDecrement:
+	case lang.BFCmdDataPtrDecrement:
 		if p.dataptr == 0 {
 			return false, ErrDataPtr
 		}
 		p.dataptr--
-	case BFCmdDataIncrement:
+	case lang.BFCmdDataIncrement:
 		p.data[p.dataptr]++
-	case BFCmdDataDecrement:
+	case lang.BFCmdDataDecrement:
 		p.data[p.dataptr]--
-	case BFCmdInputByte:
+	case lang.BFCmdInputByte:
 		var b [1]byte
 		for {
 			n, err := p.input.Read(b[:])
@@ -268,7 +209,7 @@ func (p *BFProgram) RunStep() (bool, error) {
 		}
 		p.data[p.dataptr] = b[0]
 
-	case BFCmdOutputByte:
+	case lang.BFCmdOutputByte:
 		n, err := p.output.Write(p.data[p.dataptr : p.dataptr+1])
 		if err != nil {
 			return false, ErrWriteError
@@ -276,11 +217,11 @@ func (p *BFProgram) RunStep() (bool, error) {
 		if n != 1 {
 			return false, ErrWriteError
 		}
-	case BFCmdLoopStart:
+	case lang.BFCmdLoopStart:
 		if p.data[p.dataptr] == 0 {
 			p.cmdptr = p.fwdjump[p.cmdptr]
 		}
-	case BFCmdLoopEnd:
+	case lang.BFCmdLoopEnd:
 		if p.data[p.dataptr] != 0 {
 			p.cmdptr = p.revjump[p.cmdptr]
 		}
@@ -300,4 +241,25 @@ func (p *BFProgram) Run() error {
 		}
 	}
 	return nil
+}
+
+func (p *BFProgram) CreateILTree() *il.ILBlock {
+	s := il.NewILBlockStack()
+	ib := il.NewILBlock(il.ILList)
+	var cur = ib
+	for _, c := range p.commands {
+		if c == lang.BFCmdLoopEnd {
+			cur = s.Pop()
+			continue
+		}
+
+		b := c.ToILBlock()
+		cur.Append(b)
+
+		if c == lang.BFCmdLoopStart {
+			s.Push(cur)
+			cur = b
+		}
+	}
+	return ib
 }

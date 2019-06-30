@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/linux4life798/gobf/gobflib/lang"
+
 	. "github.com/linux4life798/gobf/gobflib"
 	"github.com/spf13/cobra"
 )
@@ -82,7 +84,10 @@ func BFGenGo(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	err = prgm.GenGo(output)
+	il := prgm.CreateILTree()
+	il.Optimize()
+	il.Prune()
+	err = lang.ILBlockToGo(il, output)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate Go: %v\n", err)
 		os.Exit(1)
@@ -125,7 +130,10 @@ func BFCompile(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	err = prgm.GenGo(gofile)
+	il := prgm.CreateILTree()
+	il.Optimize()
+	il.Prune()
+	err = lang.ILBlockToGo(il, gofile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate Go: %v\n", err)
 		os.Exit(1)

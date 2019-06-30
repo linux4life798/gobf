@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/linux4life798/gobf/gobflib/lang"
 )
 
 type testanspair struct {
@@ -139,7 +141,7 @@ func TestNoProgramIL(t *testing.T) {
 	prgm := NewIOBFProgram(0, 0, input, output)
 	il := prgm.CreateILTree()
 	il.Optimize()
-	il.String()
+	lang.ILBlockToGo(il, output)
 }
 
 func BenchmarkParsingSource(b *testing.B) {
