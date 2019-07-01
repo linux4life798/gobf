@@ -36,11 +36,6 @@ func BFRun(cmd *cobra.Command, args []string) {
 	fsize := finfo.Size()
 	prgm := NewBFProgram(uint64(fsize), defaultDataSize)
 	prgm.ReadCommands(f)
-	if *debugEnabled {
-		fmt.Fprintf(os.Stderr, "Commands: ")
-		prgm.PrintProgram(os.Stderr)
-		fmt.Fprintf(os.Stderr, "\n")
-	}
 	if err := prgm.Run(); err != nil {
 		fmt.Println(err)
 	}
@@ -71,11 +66,6 @@ func BFGenGo(cmd *cobra.Command, args []string) {
 	fsize := finfo.Size()
 	prgm := NewBFProgram(uint64(fsize), defaultDataSize)
 	prgm.ReadCommands(f)
-	if *debugEnabled {
-		fmt.Fprintf(os.Stderr, "Commands: ")
-		prgm.PrintProgram(os.Stderr)
-		fmt.Fprintf(os.Stderr, "\n")
-	}
 
 	output := os.Stdout
 	if len(args) > 1 {
@@ -133,10 +123,6 @@ func BFDumpIL(cmd *cobra.Command, args []string) {
 	fsize := finfo.Size()
 	prgm := NewBFProgram(uint64(fsize), defaultDataSize)
 	prgm.ReadCommands(f)
-	if *debugEnabled {
-		fmt.Fprintf(os.Stderr, "Commands: ")
-		prgm.PrintProgram(os.Stderr)
-		fmt.Fprintf(os.Stderr, "\n")
 
 	output := os.Stdout
 	if len(args) > 1 {
@@ -240,14 +226,14 @@ func BFCompile(cmd *cobra.Command, args []string) {
 
 func main() {
 	var cmdRun = &cobra.Command{
-		Use:   "run [bf file]",
+		Use:   "run <bf file>",
 		Short: "Run the given bf file",
 		Long:  `This will evoke the interpreter for a specified bf text file`,
 		Args:  cobra.MinimumNArgs(1),
 		Run:   BFRun,
 	}
 	var cmdGenGo = &cobra.Command{
-		Use:   "gengo [bf file] [output go file]",
+		Use:   "gengo <bf file> [output go file]",
 		Short: "Generate a Go representation of the given bf file",
 		Long:  `This will parse a given bf text file and generate equivalent Go code`,
 		Args:  cobra.MinimumNArgs(1),
@@ -261,7 +247,7 @@ func main() {
 		Run:   BFDumpIL,
 	}
 	var cmdCompile = &cobra.Command{
-		Use:   "compile [bf file]",
+		Use:   "compile <bf file> [output go file]",
 		Short: "Compile the given bf file to a binary",
 		Long:  `This will parse a given bf text file and generate equivalent binary program`,
 		Args:  cobra.MinimumNArgs(1),
