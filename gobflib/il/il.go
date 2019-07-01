@@ -69,19 +69,12 @@ func (b *ILBlock) GetLast() *ILBlock {
 
 func (b *ILBlock) Dump(out io.Writer, indent int) {
 	const indentWidth = 4
-	fmt.Fprintf(out, "%*s----------\n", indent*indentWidth, "")
+	fmt.Fprintf(out, "%*s---------------------------------\n", indent*indentWidth, "")
 	if b == nil {
 		fmt.Fprintf(out, "%*s<nil>\n", indent*indentWidth, "")
 		return
 	}
-	fmt.Fprintf(out, "%*s|Type:   %v\n", indent*indentWidth, "", b.typ)
-	fmt.Fprintf(out, "%*s|Param:  %d\n", indent*indentWidth, "", b.param)
-	fmt.Fprintf(out, "%*s|Vector: %v\n", indent*indentWidth, "", b.vec)
-	fmt.Fprintf(out, "%*s|Inner: len=%d\n", indent*indentWidth, "", len(b.inner))
-	if b.inner == nil {
-		fmt.Fprintf(out, "%*s<nil>\n", (indent+1)*indentWidth, "")
-		return
-	}
+	fmt.Fprintf(out, "%*s| %v | param=%v vec=%v |\n", indent*indentWidth, "", b.typ, b.param, b.vec)
 	for _, ib := range b.inner {
 		ib.Dump(out, indent+1)
 	}
