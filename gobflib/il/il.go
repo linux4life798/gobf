@@ -228,16 +228,18 @@ func (c *voverlay) dataptradd(delta int64) {
 	c.footer.param = int64(c.ptrOff)
 }
 
-func (b *ILBlock) Vectorize() {
+func (b *ILBlock) Vectorize() int {
 	// for long blocks that don't print, aggregate their data deltas
 	// and dataptr moves into the following:
 	// * dataptr move
 	// * data vector deltas apply
 	// * dataptr move
 
+	var count int64
+
 	// base condition
 	if b.typ != ILList && b.typ != ILLoop {
-		return
+		return int(count)
 	}
 
 	var wg sync.WaitGroup
@@ -256,7 +258,8 @@ func (b *ILBlock) Vectorize() {
 			b.Append(ib)
 			wg.Add(1)
 			go func(wg *sync.WaitGroup, ib *ILBlock) {
-				ib.Vectorize()
+				c := ib.Vectorize()
+				atomic.AddInt64(&count, int64(c))
 				wg.Done()
 			}(&wg, ib)
 		case ILRead, ILWrite:
@@ -281,6 +284,7 @@ func (b *ILBlock) Vectorize() {
 				b.Append(lastVec.header)
 				b.Append(lastVec.vec)
 				b.Append(lastVec.footer)
+				atomic.AddInt64(&count, 1)
 			}
 			lastVec.dataadd(byte(ib.param))
 		case ILDataPtrAdd:
@@ -294,4 +298,6 @@ func (b *ILBlock) Vectorize() {
 		}
 	}
 	wg.Wait()
+
+	return int(count)
 }
