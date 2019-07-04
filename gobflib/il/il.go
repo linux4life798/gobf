@@ -167,25 +167,20 @@ func (b *ILBlock) isPruneable() bool {
 // This must be done depth first, to ensure that parent nodes will be pruned
 // after leaf nodes.
 // TODO: Parallelize
-func (b *ILBlock) Prune() int {
-	var count int
+func (b *ILBlock) Prune() {
 
 	if len(b.inner) == 0 {
-		return count
+		return
 	}
 
 	oldinner := b.inner
 	b.inner = make([]*ILBlock, 0)
 	for _, ib := range oldinner {
-		count += ib.Prune()
+		ib.Prune()
 		if !ib.isPruneable() {
 			b.Append(ib)
-		} else {
-			count++
 		}
 	}
-
-	return count
 }
 
 type voverlay struct {
