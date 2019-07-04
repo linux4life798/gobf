@@ -228,6 +228,28 @@ func (c *voverlay) dataptradd(delta int64) {
 	c.footer.param = int64(c.ptrOff)
 }
 
+func (b *ILBlock) vectorCost() (vcost, icost int) {
+	const datapaddCost = 1 + 1 + 1         // add, check <0, check readjust
+	const dataaddvecStaticCost = 1 + 1 + 1 // check readjust, slice, bound check
+	if b.typ != ILDataAddVector {
+		return -1, -1
+	}
+
+	// Vector Static Cost
+	vcost += dataaddvecStaticCost
+	// Vector Dynamic Cost
+	vcost += len(b.vec)
+
+	for _, v := range b.vec {
+		if v != 0 {
+			// Independent Dynamic Cost
+			icost += datapaddCost
+		}
+	}
+
+	return
+}
+
 func (b *ILBlock) Vectorize() int {
 	// for long blocks that don't print, aggregate their data deltas
 	// and dataptr moves into the following:
@@ -295,6 +317,70 @@ func (b *ILBlock) Vectorize() int {
 			}
 		case ILDataAddVector:
 			b.Append(ib)
+		}
+	}
+	wg.Wait()
+
+	return int(count)
+}
+
+// VectorBalance runs after Vectorizing and determines the runtime
+// cost of keeping vectorized adds as compared to having independent operations.
+// If the cost is higher to have vectorized operations, they are split up.
+func (b *ILBlock) VectorBalance() int {
+	var count int64
+
+	// base condition
+	if b.typ != ILList && b.typ != ILLoop {
+		return int(count)
+	}
+
+	var wg sync.WaitGroup
+
+	// rip through inner ILBlocks
+	oldinner := b.inner
+	b.inner = make([]*ILBlock, 0)
+
+	for _, ib := range oldinner {
+		switch ib.typ {
+		case ILList, ILLoop:
+			b.Append(ib)
+			wg.Add(1)
+			go func(wg *sync.WaitGroup, ib *ILBlock) {
+				c := ib.VectorBalance()
+				atomic.AddInt64(&count, int64(c))
+				wg.Done()
+			}(&wg, ib)
+		case ILRead, ILWrite, ILDataAdd, ILDataPtrAdd:
+			b.Append(ib)
+		case ILDataAddVector:
+			vcost, ocost := ib.vectorCost()
+			if vcost > ocost {
+				// Break It Up
+				for _, v := range ib.vec {
+					b.Append(&ILBlock{
+						typ:   ILDataAdd,
+						param: int64(v),
+					})
+					b.Append(&ILBlock{
+						typ:   ILDataPtrAdd,
+						param: 1,
+					})
+				}
+
+				// Add corrective dataptr. This should be the exact inverse
+				// data ptr value of the next ILBlock.
+				// This will be combined with original footer
+				// using an additional Optimize step and remove when
+				// after a Prune.
+				b.Append(&ILBlock{
+					typ:   ILDataPtrAdd,
+					param: int64(-len(ib.vec)),
+				})
+				atomic.AddInt64(&count, 1)
+			} else {
+				b.Append(ib)
+			}
 		}
 	}
 	wg.Wait()
