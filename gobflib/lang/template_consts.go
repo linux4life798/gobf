@@ -8,13 +8,17 @@ package main
 import "bytes"
 import "os"
 {{ if .ProfilingEnabled }}
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 {{ end }}
 
 var data []byte
 var datap int
 {{ if .ProfilingEnabled }}
 var datapMax int
+var start time.Time
 
 func profUpdateDatapMax(dp int) {
 	if dp > datapMax {
@@ -22,7 +26,12 @@ func profUpdateDatapMax(dp int) {
 	}
 }
 
-func profPrintMetrics() {
+func profProgramStart() {
+	start = time.Now()
+}
+
+func profProgramEnd() {
+	fmt.Fprintln(os.Stderr, "Runtime:     ", time.Now().Sub(start))
 	fmt.Fprintln(os.Stderr, "Data Ptr:    ", datap)
 	fmt.Fprintln(os.Stderr, "Data Ptr Max:", datapMax)
 	fmt.Fprintln(os.Stderr, "Data Length: ", len(data))
@@ -82,11 +91,15 @@ func dataaddvector(vec []byte) {
 func main() {
 	data = make([]byte, {{ .InitialDataSize }})
 
+	{{ if .ProfilingEnabled }}
+	profProgramStart()
+	{{ end }}
+
 	{{ range .Body }}{{ . }}
 	{{ end }}
 
 	{{ if .ProfilingEnabled }}
-	profPrintMetrics()
+	profProgramEnd()
 	{{ end }}
 }
 `
