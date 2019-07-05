@@ -1,7 +1,9 @@
 package main
 
-import "bytes"
-import "os"
+import (
+	"bytes"
+	"os"
+)
 {{ if .ProfilingEnabled }}
 import (
 	"fmt"
