@@ -1,3 +1,3 @@
 # Language
 
-This package halt the syntax/language interface to BG and Go.
+This package holds the syntax/language interface to BF and generated Go.
