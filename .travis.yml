@@ -16,3 +16,5 @@ install:
   - go get -v -t ./gobflib .
 script:
   - go test -v ./gobflib
+  - go test -v ./gobflib/il
+  - go test -bench=. -v ./gobflib
