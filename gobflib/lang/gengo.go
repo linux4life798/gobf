@@ -17,8 +17,9 @@ const (
 )
 
 type TemplateParams struct {
-	InitialDataSize int
-	Body            <-chan string
+	InitialDataSize  int
+	Body             <-chan string
+	ProfilingEnabled bool
 }
 
 func ilBlockGo(b *il.ILBlock, cout chan<- string) {
@@ -51,10 +52,14 @@ func ilBlockGo(b *il.ILBlock, cout chan<- string) {
 		cout <- fmt.Sprintf("writeb(%v)", b.GetParam())
 	case il.ILDataAddVector:
 		cout <- fmt.Sprintf("dataaddvector(%#v)", b.GetVector())
+	case il.ILDataSet:
+		cout <- fmt.Sprintf("dataset(%d)", b.GetParam())
+	default:
+		panic("Encountered an unknown ILBlock type.")
 	}
 }
 
-func ILBlockToGo(b *il.ILBlock, output io.Writer) error {
+func ILBlockToGo(b *il.ILBlock, output io.Writer, profileenabled bool) error {
 	var useGoFmt bool = true
 	var err error
 
@@ -70,8 +75,9 @@ func ILBlockToGo(b *il.ILBlock, output io.Writer) error {
 	}()
 
 	var params = TemplateParams{
-		InitialDataSize: DefaultDataSize,
-		Body:            c,
+		InitialDataSize:  DefaultDataSize,
+		Body:             c,
+		ProfilingEnabled: profileenabled,
 	}
 	t := template.Must(template.New("main").Parse(templateConstMain))
 
@@ -135,7 +141,7 @@ func CompileGo(infile, outfile string, debugenabled bool, gccgo bool) error {
 
 // If err is non-nil, the tempdir is preserved and returned
 // with the error
-func CompileIL(b *il.ILBlock, outfile string, debugenabled bool) (error, string) {
+func CompileIL(b *il.ILBlock, outfile string, debugenabled, profileenabled bool) (error, string) {
 	// Create temp directory for generated Go /tmp/gobfcompile########
 	tempdir, err := ioutil.TempDir("", "gobfcompile")
 	if err != nil {
@@ -149,7 +155,7 @@ func CompileIL(b *il.ILBlock, outfile string, debugenabled bool) (error, string)
 	}
 
 	// Generate the Go code
-	if err := ILBlockToGo(b, gofile); err != nil {
+	if err := ILBlockToGo(b, gofile, profileenabled); err != nil {
 		return fmt.Errorf("Failed to generate Go: %v", err), tempdir
 	}
 

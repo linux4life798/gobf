@@ -29,6 +29,11 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 	if flagFullVectorize {
 		flagVectorize = true
 	}
+	flagOpts, _ := cmd.Flags().GetStringSlice("optimize")
+	var optimization = make(map[string]bool)
+	for _, opt := range flagOpts {
+		optimization[opt] = true
+	}
 
 	// fsize := finfo.Size()
 	prgm := NewBFProgram(uint64(bfinputsize), defaultDataSize)
@@ -38,18 +43,19 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 	var pruneCount int
 	var vectorizeCount int
 	var vectorBalanceCount int
+	var optimizationCount int
 
-	il := prgm.CreateILTree()
+	iltree := prgm.CreateILTree()
 	if flagCompress {
-		compressCount += il.Compress()
+		compressCount += iltree.Compress()
 	}
 	if flagPrune {
-		pruneCount += il.Prune()
+		pruneCount += iltree.Prune()
 	}
 	if flagVectorize {
-		vectorizeCount = il.Vectorize()
+		vectorizeCount = iltree.Vectorize()
 		if !flagFullVectorize {
-			vectorBalanceCount = il.VectorBalance()
+			vectorBalanceCount = iltree.VectorBalance()
 		}
 
 		// ILDataAdd    -1
@@ -57,18 +63,23 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 		// ILDataAdd     1
 
 		// prune possible datapadd(0) after vector replace
-		pruneCount += il.Prune()
-		compressCount += il.Compress()
-		pruneCount += il.Prune()
+		pruneCount += iltree.Prune()
+		compressCount += iltree.Compress()
+		pruneCount += iltree.Prune()
 
-		if count := il.Compress(); count > 0 {
+		if count := iltree.Compress(); count > 0 {
 			fmt.Println("# Error", count, "Additional Compresses Were Necessary!")
 		}
-		if count := il.Prune(); count > 0 {
+		if count := iltree.Prune(); count > 0 {
 			fmt.Println("# Error", count, "Additional Prune Were Necessary!")
 		}
 	}
 
+	if optimization["zero"] {
+		optimizationCount = iltree.PatternReplace(il.PatternReplaceZero)
+		optimizationCount += iltree.Compress()
+		optimizationCount += iltree.Prune()
+	}
 
 	if *debugEnabled {
 		if flagCompress {
@@ -84,10 +95,13 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 					"(", vectorizeCount-vectorBalanceCount, "remain )")
 			}
 		}
-		fmt.Println("Max Data Depth:        ", il.PredictMaxDataSize()+1)
+		if len(flagOpts) > 0 {
+			fmt.Println("Optimization Count:    ", optimizationCount)
+		}
+		fmt.Println("Final Block Count:     ", iltree.BlockCount())
 	}
 
-	return il, nil
+	return iltree, nil
 }
 
 func BFRun(cmd *cobra.Command, args []string) {
@@ -117,6 +131,7 @@ func BFRun(cmd *cobra.Command, args []string) {
 }
 
 func BFGenGo(cmd *cobra.Command, args []string) {
+	flagProfile, _ := cmd.Flags().GetBool("profile")
 	filename := args[0]
 	f, err := os.Open(filename)
 	if err != nil {
@@ -147,7 +162,7 @@ func BFGenGo(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	err = lang.ILBlockToGo(il, output)
+	err = lang.ILBlockToGo(il, output, flagProfile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to generate Go: %v\n", err)
 		os.Exit(1)
@@ -189,6 +204,8 @@ func BFDumpIL(cmd *cobra.Command, args []string) {
 }
 
 func BFCompile(cmd *cobra.Command, args []string) {
+	flagProfile, _ := cmd.Flags().GetBool("profile")
+
 	filename := args[0]
 	f, err := os.Open(filename)
 	if err != nil {
@@ -228,7 +245,7 @@ func BFCompile(cmd *cobra.Command, args []string) {
 		outputfilename = basename
 	}
 
-	err, tempdir := lang.CompileIL(il, outputfilename, *debugEnabled)
+	err, tempdir := lang.CompileIL(il, outputfilename, *debugEnabled, flagProfile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error - %v", err)
 		os.Exit(2)
@@ -270,10 +287,12 @@ func main() {
 
 	var rootCmd = &cobra.Command{Use: "gobf"}
 	debugEnabled = rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug mode")
+	rootCmd.PersistentFlags().BoolP("profile", "p", false, "Enable output program self profiling. This will slow down runtime.")
 	rootCmd.PersistentFlags().BoolP("compress", "C", true, "Enable collapsing of repeat commands")
 	rootCmd.PersistentFlags().BoolP("prune", "P", true, "Enable pruning of dead commands")
 	rootCmd.PersistentFlags().BoolP("vectorize", "V", false, "Enable vectorizing of commands in a block")
 	rootCmd.PersistentFlags().BoolP("full-vectorize", "F", false, "Force full vectorization without deciding cost tradeoff")
+	rootCmd.PersistentFlags().StringSliceP("optimize", "O", []string{}, "Enables particular optimizations")
 	rootCmd.AddCommand(cmdRun)
 	rootCmd.AddCommand(cmdGenGo)
 	rootCmd.AddCommand(cmdDumpIL)

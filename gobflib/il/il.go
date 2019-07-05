@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 )
 
 type ILBlockType byte
@@ -15,6 +16,7 @@ const (
 	ILLoop
 	ILDataPtrAdd
 	ILDataAdd
+	ILDataSet
 	ILRead
 	ILWrite
 	ILDataAddVector
@@ -55,6 +57,13 @@ func (b *ILBlock) SetParam(param int64) {
 	b.param = param
 }
 
+func (b *ILBlock) ResetInner(size int) {
+	if size < 0 {
+		size = len(b.inner)
+	}
+	b.inner = make([]*ILBlock, 0, size)
+}
+
 func (b *ILBlock) Append(bs ...*ILBlock) {
 	b.inner = append(b.inner, bs...)
 }
@@ -69,12 +78,22 @@ func (b *ILBlock) GetLast() *ILBlock {
 
 func (b *ILBlock) Dump(out io.Writer, indent int) {
 	const indentWidth = 4
-	fmt.Fprintf(out, "%*s---------------------------------\n", indent*indentWidth, "")
+	fmt.Fprintf(out, "%*s--------------------------\n", indent*indentWidth, "")
 	if b == nil {
 		fmt.Fprintf(out, "%*s<nil>\n", indent*indentWidth, "")
 		return
 	}
-	fmt.Fprintf(out, "%*s| %v | param=%v vec=%v |\n", indent*indentWidth, "", b.typ, b.param, b.vec)
+	fmt.Fprintf(out, "%*s| %-12v |", indent*indentWidth, "", b.typ)
+	switch b.typ {
+	case ILList, ILLoop:
+	case ILDataAdd, ILDataPtrAdd, ILDataSet:
+		fmt.Fprintf(out, " param=%v |", b.param)
+	case ILDataAddVector:
+		fmt.Fprintf(out, " vec=%v |", b.vec)
+		vc, oc := b.vectorCost()
+		fmt.Fprintf(out, " vcost=%d ocost=%d", vc, oc)
+	}
+	fmt.Fprintf(out, "\n")
 	for _, ib := range b.inner {
 		ib.Dump(out, indent+1)
 	}
@@ -104,42 +123,115 @@ func (b *ILBlock) Equal(a *ILBlock) bool {
 	return true
 }
 
-func (b *ILBlock) Optimize() {
+// Compress combines adjacent same type ILBlocks that have repeat parameters
+//
+// This is one case, where multiple Compress/Prune cycles are necessary.
+// This can really only happen after a VectorBalance step.
+//
+// ILDataAdd    -1
+// ILDataPtrAdd  0
+// ILDataAdd     1
+//
+// Can this happen more than once?
+//
+// ILDataAdd    -1
+// ILDataPtrAdd  0
+// ILDataAdd     1
+func (b *ILBlock) Compress() int {
+	var count int64
+
 	// base condition
 	if b.typ != ILList && b.typ != ILLoop {
-		return
+		return int(count)
 	}
 
+	var oldinner []*ILBlock
+
+	/* This step expands ILLists elements into the parent ILBlock */
+	oldinner = b.GetInner()
+	b.ResetInner(-1)
+	for _, ib := range oldinner {
+		if ib.typ == ILList {
+			b.Append(ib.inner...)
+			count += int64(len(ib.inner))
+		} else {
+			b.Append(ib)
+		}
+	}
+
+	/* This step combines similar consecutive ILBlock types */
 	var wg sync.WaitGroup
-
-	// rip through inner ILBlocks
-	oldinner := b.inner
-	b.inner = make([]*ILBlock, 0)
-
+	oldinner = b.GetInner()
+	b.ResetInner(-1)
 	var lastb *ILBlock
 	for _, ib := range oldinner {
-		if ib.typ == ILList || ib.typ == ILLoop {
+		switch ib.typ {
+		case ILList, ILLoop:
 			b.Append(ib)
 			wg.Add(1)
 			go func(wg *sync.WaitGroup, ib *ILBlock) {
-				ib.Optimize()
+				c := ib.Compress()
+				atomic.AddInt64(&count, int64(c))
 				wg.Done()
 			}(&wg, ib)
 			lastb = nil
-		} else if ib.typ == ILDataAddVector {
-			b.Append(ib)
-			lastb = nil
-		} else {
-			/* Combine DataAdds, DataPtrAdds, and WriteBs */
+		case ILDataPtrAdd, ILWrite:
+			/* Combine DataPtrAdds or WriteBs */
 			if lastb != nil && lastb.typ == ib.typ {
+				// combine with previous run
 				lastb.param += ib.param
+				atomic.AddInt64(&count, 1)
 			} else {
+				// start next run
 				b.Append(ib)
 				lastb = ib
 			}
+		case ILDataAdd:
+			/* Combine DataAdds, DataPtrAdds, and WriteBs */
+			if lastb != nil {
+				switch lastb.typ {
+				case ILDataAdd, ILDataSet:
+					// combine with previous DataAdd or DataSet
+					lastb.param += ib.param
+					atomic.AddInt64(&count, 1)
+				default:
+					b.Append(ib)
+					lastb = ib
+				}
+			} else {
+				// start next run
+				b.Append(ib)
+				lastb = ib
+			}
+		case ILDataSet:
+			/* Overrive a previous ILDataSet or ILDataAdd(interesting eh?) */
+			if lastb != nil {
+				switch lastb.typ {
+				case ILDataSet, ILDataAdd:
+					// combine with previous run
+					lastb.typ = ILDataSet // override a previous DataAdd
+					lastb.param = ib.param
+					atomic.AddInt64(&count, 1)
+				default:
+					b.Append(ib)
+					lastb = ib
+				}
+			} else {
+				// start next run
+				b.Append(ib)
+				lastb = ib
+			}
+		case ILDataAddVector:
+			fallthrough
+		default:
+			b.Append(ib)
+			lastb = nil
 		}
 	}
+
 	wg.Wait()
+
+	return int(count)
 }
 
 // isPruneable uses a set of rules to determine id an ILBlock
@@ -265,10 +357,11 @@ func (b *ILBlock) Vectorize() int {
 	}
 
 	var wg sync.WaitGroup
+	var oldinner []*ILBlock
 
 	// rip through inner ILBlocks
-	oldinner := b.inner
-	b.inner = make([]*ILBlock, 0)
+	oldinner = b.GetInner()
+	b.ResetInner(-1)
 
 	var lastVec *voverlay
 	for _, ib := range oldinner {
@@ -386,4 +479,144 @@ func (b *ILBlock) VectorBalance() int {
 	wg.Wait()
 
 	return int(count)
+}
+
+type PatternReplacer func(b *ILBlock) []*ILBlock
+
+func PatternReplaceZero(b *ILBlock) []*ILBlock {
+	if b.typ != ILLoop {
+		return nil
+	}
+	if len(b.inner) != 1 {
+		return nil
+	}
+
+	switch b.inner[0].typ {
+	case ILDataAdd:
+		// data add with -1 (0xFF)
+		if b.inner[0].param != -1 {
+			return nil
+		}
+	case ILDataAddVector:
+		// vector with one element -1 (0xFF)
+		if len(b.inner[0].vec) != 1 || b.inner[0].vec[0] != 0xff {
+			return nil
+		}
+	default:
+		return nil
+	}
+
+	return []*ILBlock{
+		&ILBlock{
+			typ:   ILDataSet,
+			param: 0,
+		},
+	}
+}
+
+
+func (b *ILBlock) PatternReplace(replacers ...PatternReplacer) int {
+	var count int64
+
+	// Try all the replacer. If one matches and returns
+	// a set of replacement instructions, wrap them in an ILList
+	// replace the current ILBlock.
+	for _, replacer := range replacers {
+		if rep := replacer(b); rep != nil {
+			atomic.AddInt64(&count, 1)
+			// wrap it in an ILList
+			b.typ = ILList
+			b.inner = rep
+			break
+		}
+	}
+
+	// rip through inner ILBlocks
+	var wg sync.WaitGroup
+	for _, ib := range b.GetInner() {
+		// Recursively search for sub-matches.
+		// We allow an already matched and replaced ILBlock to be searched
+		// again.
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, ib *ILBlock) {
+			c := ib.PatternReplace(replacers...)
+			atomic.AddInt64(&count, int64(c))
+			wg.Done()
+		}(&wg, ib)
+	}
+	wg.Wait()
+
+	return int(count)
+}
+
+// BlockCount counts the total number of ILBlocks in the tree b
+func (b *ILBlock) BlockCount() int {
+	var count int64 = 1
+
+	var wg sync.WaitGroup
+	for _, ib := range b.GetInner() {
+		switch ib.typ {
+		case ILList, ILLoop:
+			wg.Add(1)
+			go func(wg *sync.WaitGroup, ib *ILBlock) {
+				c := int64(ib.BlockCount())
+				atomic.AddInt64(&count, int64(c))
+				wg.Done()
+			}(&wg, ib)
+		default:
+			atomic.AddInt64(&count, 1)
+		}
+	}
+	wg.Wait()
+
+	return int(count)
+}
+
+// You can't really predict the max data depth, since
+// you can use a loop to skip forward one at a time.
+// For example, this program sets the first two cells
+// to 1, rewinds the ptr back, has a loop find the last cell,
+// and then moves two places past.
+// +>+><<[>]>>
+func (b *ILBlock) PredictMaxDataSize() int {
+	var deltaMax int64
+	var delta int64
+
+	// base condition
+	if b.typ == ILDataPtrAdd {
+		if b.param > 0 {
+			deltaMax = b.param
+		}
+		return int(deltaMax)
+	}
+	if b.typ != ILList && b.typ != ILLoop {
+		return int(deltaMax)
+	}
+
+	// var wg sync.WaitGroup
+
+	for _, ib := range b.inner {
+		switch ib.typ {
+		case ILDataPtrAdd:
+			delta += ib.param
+			if delta > deltaMax {
+				deltaMax = delta
+			}
+		case ILList, ILLoop:
+			// wg.Add(1)
+			// go func(wg *sync.WaitGroup, ib *ILBlock) {
+			dMax := int64(ib.PredictMaxDataSize()) + delta
+			if dMax > deltaMax {
+				deltaMax = dMax
+			}
+			// atomic.AddInt64(&delta, int64(c))
+			// wg.Done()
+			// }(&wg, ib)
+		case ILRead, ILWrite, ILDataAdd:
+		case ILDataAddVector:
+		}
+	}
+	// wg.Wait()
+
+	return int(deltaMax)
 }
