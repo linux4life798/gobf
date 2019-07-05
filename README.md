@@ -39,7 +39,7 @@ performance dramatically. All of the interesting optimization stuff
 is in [gobflib/il](gobflib/il) package.
 
 Recent work has added some pattern and vectorization based optimizations,
-but these have not been fully calibrated yet,
+but these have not been fully calibrated yet.
 
 To try the zero pattern optimization, invoke gobf in the following manor:
 ```sh
