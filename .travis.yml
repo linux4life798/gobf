@@ -1,4 +1,11 @@
 sudo: false
+addons:
+  apt:
+    packages:
+    - wget
+before_script:
+  - ./fetch-testprograms.bash
+
 language: go
 go:
 # Needs strings.Builder, which didn't exist in 1.9
