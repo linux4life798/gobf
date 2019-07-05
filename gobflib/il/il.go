@@ -483,6 +483,7 @@ func (b *ILBlock) VectorBalance() int {
 
 type PatternReplacer func(b *ILBlock) []*ILBlock
 
+// Compatible with DataAdd and DataAddVector
 func PatternReplaceZero(b *ILBlock) []*ILBlock {
 	if b.typ != ILLoop {
 		return nil
