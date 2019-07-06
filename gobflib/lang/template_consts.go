@@ -7,11 +7,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 )
 {{ if .ProfilingEnabled }}
 import (
-	"fmt"
+	"crypto/sha256"
 	"time"
 )
 {{ end }}
@@ -37,6 +38,10 @@ func profProgramEnd() {
 	fmt.Fprintln(os.Stderr, "Data Ptr:    ", datap)
 	fmt.Fprintln(os.Stderr, "Data Ptr Max:", datapMax)
 	fmt.Fprintln(os.Stderr, "Data Length: ", len(data))
+	fmt.Fprintln(os.Stderr, "Data:        ", data[:datapMax+1])
+	h := sha256.New()
+	h.Write(data[:datapMax+1])
+	fmt.Fprintf(os.Stderr,  "Data:         %x\n", h.Sum(nil))
 }
 {{ end }}
 
