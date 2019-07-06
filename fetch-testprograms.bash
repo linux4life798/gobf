@@ -11,10 +11,13 @@
 BENCHMARK=(
 	https://github.com/fabianishere/brainfuck/raw/master/examples/hello.bf
 	https://github.com/erikdubbelboer/brainfuck-jit/raw/master/mandelbrot.bf
-#	Need to really zoom out your terminal
-	https://github.com/fabianishere/brainfuck/raw/master/examples/mandelbrot/mandelbrot-titannic.bf
 	https://github.com/fabianishere/brainfuck/raw/master/examples/mandelbrot/mandelbrot-huge.bf
 	https://github.com/fabianishere/brainfuck/raw/master/examples/hanoi.bf
+)
+
+BENCHMARK_LONG=(
+#	Need to really zoom out your terminal
+	https://github.com/fabianishere/brainfuck/raw/master/examples/mandelbrot/mandelbrot-titannic.bf
 )
 
 INTERACTIVE=(
@@ -27,7 +30,8 @@ if ! which wget &>/dev/null; then
 	exit 1
 fi
 
-mkdir -p testprograms/interactive
+mkdir -p testprograms/interactive testprograms/longrunning
 
 wget -c -P testprograms "${BENCHMARK[@]}"
+wget -c -P testprograms/longrunning "${BENCHMARK_LONG[@]}"
 wget -c -P testprograms/interactive "${INTERACTIVE[@]}"
