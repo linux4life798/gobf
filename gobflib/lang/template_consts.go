@@ -96,7 +96,7 @@ func dataaddvector(vec []byte) {
 		dataExpansionCount++
 		{{ end }}
 	}
-	var d = data[datap:]
+	var d = data[datap : datap + len(vec)]
 	_ = d[len(vec)-1]
 	for i := range vec {
 		d[i] += vec[i]
