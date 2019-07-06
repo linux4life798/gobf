@@ -2,8 +2,8 @@
 # Craig Hesling
 
 # Move to the directory containing this script
-root=$(dirname $(realpath "$BASH_SOURCE"))
-cd $root
+root="$(dirname $(realpath "$BASH_SOURCE"))"
+cd "$root"
 
 # Generate vectorization's optimial test
 ./gen-vector-test.bash > vector-test.b
