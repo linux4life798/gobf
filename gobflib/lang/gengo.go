@@ -128,6 +128,8 @@ func CompileGo(infile, outfile string, debugenabled bool, gccgo bool) error {
 	args = append(args, "-o", outfile, infile)
 
 	gobuild := exec.Command("go", args...)
+	gobuild.Stdout = os.Stderr
+	gobuild.Stderr = os.Stderr
 	if err := gobuild.Start(); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to build binary from Go: %v\n", err)
 		return err
