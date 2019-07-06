@@ -115,6 +115,25 @@ func BenchmarkMultiplyPatternReplace(b *testing.B) {
 	})
 }
 
+func TestDataSetIntOverflow(t *testing.T) {
+	var adder = 2386
+
+	var value1 byte = 0x12
+	var value2 byte = 0x12
+
+	// BF way of setting overflow value
+	for i := 0; i < adder; i++ {
+		value1++
+	}
+
+	// new way to multiply
+	value2 += byte(adder)
+
+	if value1 != value2 {
+		t.Fatalf("Values not equal: value1=%d and value2=%d", value1, value2)
+	}
+}
+
 func TestMultiplicativeAssociativity(t *testing.T) {
 	var multiplier byte = 45
 	var adder byte = 135
