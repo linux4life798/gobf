@@ -89,20 +89,27 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 		}
 	}
 
+	if optimization["lvec"] {
+		dprintf("Vectorizing IL")
+		iltree.Vectorize()
+		pruneCount += iltree.Prune()
+		compressCount += iltree.Compress()
+		pruneCount += iltree.Prune()
+
+		dprintf("Pattern Linear Vectorizing IL")
+		optimizationCount = iltree.PatternReplace(il.PatternReplaceLinearVector)
+		optimizationCount += iltree.Compress()
+		optimizationCount += iltree.Prune()
+	}
+
 	if optimization["zero"] {
+		// TODO: Implement dataset vectoring for situations where lots
+		//       of consecutive cells are set to 0
 		dprintf("Pattern Zero Replacing IL")
 		optimizationCount = iltree.PatternReplace(il.PatternReplaceZero)
 		dprintf("Compressing IL")
 		optimizationCount += iltree.Compress()
 		dprintf("Pruning IL")
-		optimizationCount += iltree.Prune()
-	}
-
-	if optimization["lvec"] {
-		iltree.Vectorize()
-
-		optimizationCount = iltree.PatternReplace(il.PatternReplaceLinearVector)
-		optimizationCount += iltree.Compress()
 		optimizationCount += iltree.Prune()
 	}
 
