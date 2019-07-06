@@ -1,0 +1,96 @@
+#!/bin/bash
+# Craig Hesling
+# Build a bunch of test binaries with different options
+
+COMMON_OPTIONS="-d"
+COMMON_OPTIONS+=" -p"
+
+OPTIONS="--compress --prune"
+OPTIONS_VEC="--compress --prune --vectorize"
+OPTIONS_FULLVEC="--compress --prune --full-vectorize"
+OPTIONS_ZERO="--compress --prune -O zero"
+OPTIONS_LVEC="--compress --prune -O lvec "
+OPTIONS_LVEC_ZERO="--compress --prune -O lvec -O zero "
+
+check_installed() {
+	local prgm=$1
+
+	if ! which "$prgm" &>/dev/null; then
+		echo "Error - $prgm is not installed." >&2
+		exit 1
+	fi
+}
+
+check_installed wget
+check_installed realpath
+check_installed dirname
+
+# Move to the directory containing this script
+root="$(dirname $(realpath "$BASH_SOURCE"))"
+cd "$root"
+
+# Build gobf
+rm -f ./gobf
+pushd gobflib/il
+go generate
+go build
+popd
+pushd gobflib/lang
+go generate
+go build
+popd
+
+go install
+go build
+
+if [ ! -e ./gobf ]; then
+	echo "Failed to build gobf"
+	exit 1
+fi
+
+./testprograms/gen-vector-test.bash 100 >testprograms/vector-test.b
+
+PRGMS=(
+	testprograms/mandelbrot.bf
+	testprograms/vector-test.b
+	testprograms/printstar.b
+#	testprograms/printstar-repeat.b
+)
+
+prefix() {
+	local p1=$1
+	local p2=$2
+	while read line; do
+		printf "%3s %20s: %s\n" "$p1" "$p2" "$line"
+	done
+}
+
+gen() {
+	local src_file=$1
+	local options_abrev=$2 # like v for vectorized
+	shift 2
+
+	local base="$(basename "$p")"
+	base=${base/.b} #TODO: fix this for mandelbrot.bf it become mandelbrotF.b
+
+	local out="gengo/$base"
+
+	echo "Options: $@"                                               | prefix "${options_abrev}" "$base"
+	./gobf $@ gengo   "${src_file}" "${out}_${options_abrev}.b.go"   | prefix "$options_abrev" "$base" &
+	./gobf $@ dumpil  "${src_file}" "${out}_${options_abrev}.b.il"    >/dev/null &
+	./gobf $@ compile "${src_file}" "${out}_${options_abrev}"         >/dev/null &
+}
+
+mkdir -p gengo
+for p in "${PRGMS[@]}"; do
+	gen $p "n"  $COMMON_OPTIONS $OPTIONS
+	gen $p "v"  $COMMON_OPTIONS $OPTIONS_VEC
+	gen $p "fv" $COMMON_OPTIONS $OPTIONS_FULLVEC
+	gen $p "z"  $COMMON_OPTIONS $OPTIONS_ZERO
+	gen $p "lv" $COMMON_OPTIONS $OPTIONS_LVEC
+	gen $p "lvz" $COMMON_OPTIONS $OPTIONS_LVEC_ZERO
+done
+
+echo Waiting for all processses to finish
+wait
+echo Done
