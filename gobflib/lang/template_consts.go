@@ -21,6 +21,7 @@ var data []byte
 var datap int
 {{ if .ProfilingEnabled }}
 var datapMax int
+var dataExpansionCount int
 var start time.Time
 
 func profUpdateDatapMax(dp int) {
@@ -34,14 +35,15 @@ func profProgramStart() {
 }
 
 func profProgramEnd() {
-	fmt.Fprintln(os.Stderr, "Runtime:     ", time.Now().Sub(start))
-	fmt.Fprintln(os.Stderr, "Data Ptr:    ", datap)
-	fmt.Fprintln(os.Stderr, "Data Ptr Max:", datapMax)
-	fmt.Fprintln(os.Stderr, "Data Length: ", len(data))
-	fmt.Fprintln(os.Stderr, "Data:        ", data[:datapMax+1])
+	fmt.Fprintln(os.Stderr, "Runtime:             ", time.Now().Sub(start))
+	fmt.Fprintln(os.Stderr, "Data Ptr:            ", datap)
+	fmt.Fprintln(os.Stderr, "Data Ptr Max:        ", datapMax)
+	fmt.Fprintln(os.Stderr, "Data Expansion Count:", dataExpansionCount)
+	fmt.Fprintln(os.Stderr, "Data Length:         ", len(data))
+	fmt.Fprintln(os.Stderr, "Data:                ", data[:datapMax+1])
 	h := sha256.New()
 	h.Write(data[:datapMax+1])
-	fmt.Fprintf(os.Stderr,  "Data:         %x\n", h.Sum(nil))
+	fmt.Fprintf(os.Stderr,  "Data:                %x\n", h.Sum(nil))
 }
 {{ end }}
 
@@ -62,6 +64,9 @@ func datapadd(delta int) {
 		newdata := make([]byte, len(data)*2)
 		copy(newdata, data)
 		data = newdata
+		{{ if .ProfilingEnabled }}
+		dataExpansionCount++
+		{{ end }}
 	}
 
 	{{ if .ProfilingEnabled }}
@@ -83,6 +88,9 @@ func dataaddvector(vec []byte) {
 		newdata := make([]byte, len(data)*2)
 		copy(newdata, data)
 		data = newdata
+		{{ if .ProfilingEnabled }}
+		dataExpansionCount++
+		{{ end }}
 	}
 	var d = data[datap:]
 	_ = d[len(vec)-1]
