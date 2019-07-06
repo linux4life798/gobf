@@ -131,6 +131,10 @@ func dataaddlvector(vec []byte, offset int) {
 	for i := range vec {
 		d[i] += vec[i] * mult
 	}
+
+	{{ if .ProfilingEnabled }}
+	profUpdateDatapMax(datap + offset + len(vec) - 1)
+	{{ end }}
 }
 
 func errorHandler() {
