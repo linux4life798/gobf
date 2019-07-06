@@ -1,3 +1,5 @@
+# To get realpath command (updated coreutils package)
+dist: xenial
 sudo: false
 addons:
   apt:
