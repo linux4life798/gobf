@@ -1,6 +1,8 @@
 #!/bin/bash
 # Craig Hesling
 
+# Generate vectorization's optimial test
+./testprograms/gen-vector-test.bash > testprograms/vector-test.b
 
 # Examples:
 # https://github.com/fabianishere/brainfuck/tree/master/examples
