@@ -30,15 +30,16 @@ func profProgramStart() {
 }
 
 func profProgramEnd() {
-	fmt.Fprintln(os.Stderr, "Runtime:             ", time.Now().Sub(start))
-	fmt.Fprintln(os.Stderr, "Data Ptr:            ", datap)
-	fmt.Fprintln(os.Stderr, "Data Ptr Max:        ", datapMax)
-	fmt.Fprintln(os.Stderr, "Data Expansion Count:", dataExpansionCount)
-	fmt.Fprintln(os.Stderr, "Data Length:         ", len(data))
-	fmt.Fprintln(os.Stderr, "Data:                ", data[:datapMax+1])
+	const space = 22
+	fmt.Fprintf(os.Stderr, "%-*s %v\n", space, "Runtime:", time.Now().Sub(start))
+	fmt.Fprintf(os.Stderr, "%-*s %v\n", space, "Data Ptr:", datap)
+	fmt.Fprintf(os.Stderr, "%-*s %v\n", space, "Data Ptr Max:", datapMax)
+	fmt.Fprintf(os.Stderr, "%-*s %v\n", space, "Data Expansion Count:", dataExpansionCount)
+	fmt.Fprintf(os.Stderr, "%-*s %v\n", space, "Data Length:", len(data))
+	fmt.Fprintf(os.Stderr, "%-*s %v\n", space, "Data:", data[:datapMax+1])
 	h := sha1.New()
 	h.Write(data[:datapMax+1])
-	fmt.Fprintf(os.Stderr,  "Data:                %x\n", h.Sum(nil))
+	fmt.Fprintf(os.Stderr, "%-*s %x\n", space, "Data:", h.Sum(nil))
 }
 {{ end }}
 
