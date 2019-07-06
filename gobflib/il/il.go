@@ -452,8 +452,6 @@ func (b *ILBlock) VectorBalance() int {
 				atomic.AddInt64(&count, int64(c))
 				wg.Done()
 			}(&wg, ib)
-		case ILRead, ILWrite, ILDataAdd, ILDataPtrAdd:
-			b.Append(ib)
 		case ILDataAddVector:
 			vcost, ocost := ib.vectorCost()
 			if vcost > ocost {
@@ -482,6 +480,10 @@ func (b *ILBlock) VectorBalance() int {
 			} else {
 				b.Append(ib)
 			}
+		case ILRead, ILWrite, ILDataAdd, ILDataPtrAdd:
+			fallthrough
+		default:
+			b.Append(ib)
 		}
 	}
 	wg.Wait()

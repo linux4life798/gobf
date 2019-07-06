@@ -100,6 +100,17 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 		optimizationCount = iltree.PatternReplace(il.PatternReplaceLinearVector)
 		optimizationCount += iltree.Compress()
 		optimizationCount += iltree.Prune()
+
+		if !flagFullVectorize {
+			dprintf("Rebalancing Vectorized IL")
+			vectorBalanceCount = iltree.VectorBalance()
+			dprintf("Pruning IL")
+			pruneCount += iltree.Prune()
+			dprintf("Compressing IL")
+			compressCount += iltree.Compress()
+			dprintf("Pruning IL")
+			pruneCount += iltree.Prune()
+		}
 	}
 
 	if optimization["zero"] {
