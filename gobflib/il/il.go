@@ -491,34 +491,44 @@ type PatternReplacer func(b *ILBlock) []*ILBlock
 
 // Compatible with DataAdd and DataAddVector
 func PatternReplaceZero(b *ILBlock) []*ILBlock {
-	if b.typ != ILLoop {
-		return nil
-	}
-	if len(b.inner) != 1 {
-		return nil
-	}
-
-	switch b.inner[0].typ {
-	case ILDataAdd:
-		// data add with -1 (0xFF)
-		if b.inner[0].param != -1 {
+	if b.typ == ILLoop {
+		if len(b.inner) != 1 {
 			return nil
 		}
-	case ILDataAddVector:
-		// vector with one element -1 (0xFF)
-		if len(b.inner[0].vec) != 1 || b.inner[0].vec[0] != 0xff {
+
+		switch loop := b.inner[0]; loop.typ {
+		case ILDataAdd:
+			// data add with -1 (0xFF)
+			if loop.param != -1 {
+				return nil
+			}
+		case ILDataAddVector:
+			// vector with one element -1 (0xFF)
+			if len(loop.vec) != 1 || loop.vec[0] != 0xff {
+				return nil
+			}
+		default:
 			return nil
 		}
-	default:
-		return nil
-	}
 
-	return []*ILBlock{
-		&ILBlock{
-			typ:   ILDataSet,
-			param: 0,
-		},
+		return []*ILBlock{
+			&ILBlock{
+				typ:   ILDataSet,
+				param: 0,
+			},
+		}
+	} else if b.typ == ILDataAddLinVector {
+		if len(b.vec) != 1 || b.vec[0] != 0xFF || b.param != 0 {
+			return nil
+		}
+		return []*ILBlock{
+			&ILBlock{
+				typ:   ILDataSet,
+				param: 0,
+			},
+		}
 	}
+	return nil
 }
 
 func PatternReplaceLinearVector(b *ILBlock) []*ILBlock {
