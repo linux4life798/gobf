@@ -154,6 +154,25 @@ func TestMultiplicativeAssociativity(t *testing.T) {
 	}
 }
 
+func TestMultilevelMultiplication(t *testing.T) {
+	var multiplier1 byte = 0xFF
+	var multiplier2 byte = 0xFE
+
+	var adder byte = 135
+
+	var value1 byte = 0x12
+	var value2 byte = 0x12
+
+	value1 += (adder * multiplier1)
+	value1 += (adder * multiplier2)
+
+	value2 += adder * (multiplier1 + multiplier2)
+
+	if value1 != value2 {
+		t.Fatalf("Values not equal: value1=%d and value2=%d", value1, value2)
+	}
+}
+
 func TestMultiplicativeDestruction(t *testing.T) {
 	var multiplier byte = 0xFF
 	var adder byte = 135
