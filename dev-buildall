@@ -9,8 +9,8 @@ OPTIONS="--compress --prune"
 OPTIONS_VEC="--compress --prune --vectorize"
 OPTIONS_FULLVEC="--compress --prune --full-vectorize"
 OPTIONS_ZERO="--compress --prune -O zero"
-OPTIONS_LVEC="--compress --prune -O lvec "
-OPTIONS_LVEC_ZERO="--compress --prune -O lvec -O zero "
+OPTIONS_LVEC="--compress --prune -O lvec"
+OPTIONS_LVEC_ZERO="--compress --prune -O lvec -O zero"
 
 check_installed() {
 	local prgm=$1
