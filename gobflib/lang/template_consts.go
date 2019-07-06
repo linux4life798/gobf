@@ -12,7 +12,7 @@ import (
 )
 {{ if .ProfilingEnabled }}
 import (
-	"crypto/sha256"
+	"crypto/sha1"
 	"time"
 )
 {{ end }}
@@ -41,7 +41,7 @@ func profProgramEnd() {
 	fmt.Fprintln(os.Stderr, "Data Expansion Count:", dataExpansionCount)
 	fmt.Fprintln(os.Stderr, "Data Length:         ", len(data))
 	fmt.Fprintln(os.Stderr, "Data:                ", data[:datapMax+1])
-	h := sha256.New()
+	h := sha1.New()
 	h.Write(data[:datapMax+1])
 	fmt.Fprintf(os.Stderr,  "Data:                %x\n", h.Sum(nil))
 }
