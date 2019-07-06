@@ -229,6 +229,8 @@ func (b *ILBlock) Compress() int {
 			}
 		case ILDataAddVector:
 			fallthrough
+		case ILDataAddLinVector:
+			fallthrough
 		default:
 			b.Append(ib)
 			lastb = nil
@@ -535,34 +537,44 @@ func PatternReplaceLinearVector(b *ILBlock) []*ILBlock {
 	if b.typ != ILLoop {
 		return nil
 	}
-	if len(b.inner) != 3 {
-		return nil
-	}
 
-	if b.inner[0].typ != ILDataPtrAdd || b.inner[2].typ != ILDataPtrAdd {
-		return nil
-	}
-	if b.inner[1].typ != ILDataAddVector {
-		return nil
-	}
+	var addvec *ILBlock
+	var off int64
 
-	if !(b.inner[0].param <= 0 && b.inner[2].param >= 0) {
-		return nil
-	}
+	if len(b.inner) == 1 {
+		if b.inner[0].typ != ILDataAddVector {
+			return nil
+		}
+		addvec = b.inner[0]
+	} else if len(b.inner) == 3 {
+		if b.inner[0].typ != ILDataPtrAdd ||
+			b.inner[1].typ != ILDataAddVector ||
+			b.inner[2].typ != ILDataPtrAdd {
+			return nil
+		}
+		addvec = b.inner[1]
+		off = b.inner[0].param
 
-	if b.inner[0].param != -b.inner[2].param {
-		return nil
-	}
+		if !(b.inner[0].param <= 0 && b.inner[2].param >= 0) {
+			return nil
+		}
 
-	if len(b.inner[1].vec) <= int(b.inner[2].param) || b.inner[1].vec[b.inner[2].param] != 0xFF {
+		if b.inner[0].param != -b.inner[2].param {
+			return nil
+		}
+
+		if len(addvec.vec) <= int(b.inner[2].param) || addvec.vec[b.inner[2].param] != 0xFF {
+			return nil
+		}
+	} else {
 		return nil
 	}
 
 	return []*ILBlock{
 		&ILBlock{
 			typ:   ILDataAddLinVector,
-			param: b.inner[0].param,
-			vec:   b.inner[1].vec,
+			param: off,
+			vec:   addvec.vec,
 		},
 	}
 }
