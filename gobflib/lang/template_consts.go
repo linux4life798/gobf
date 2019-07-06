@@ -62,7 +62,7 @@ func datapadd(delta int) {
 		panic("Data pointer is out of bounds")
 	}
 	if datap >= len(data) {
-		newdata := make([]byte, len(data)*2)
+		newdata := make([]byte, datap*2)
 		copy(newdata, data)
 		data = newdata
 		{{ if .ProfilingEnabled }}
@@ -85,8 +85,8 @@ func dataset(value byte) {
 
 func dataaddvector(vec []byte) {
 	// need to check data allocation
-	if (datap + len(vec) - 1) >= len(data) {
-		newdata := make([]byte, len(data)*2)
+	if l := datap + len(vec) - 1; l >= len(data)  {
+		newdata := make([]byte, l*2)
 		copy(newdata, data)
 		data = newdata
 		{{ if .ProfilingEnabled }}
