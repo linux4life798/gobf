@@ -42,8 +42,7 @@ func ilBlockGo(b *il.ILBlock, cout chan<- string) {
 	case il.ILDataPtrAdd:
 		cout <- fmt.Sprintf("datapadd(%d)", b.GetParam())
 	case il.ILDataAdd:
-		delta := byte(b.GetParam())
-		cout <- fmt.Sprintf("dataadd(%v)", delta)
+		cout <- fmt.Sprintf("dataadd(%v)", byte(b.GetParam()))
 	case il.ILRead:
 		for i := int64(0); i < b.GetParam(); i++ {
 			cout <- "readb()"
@@ -53,7 +52,7 @@ func ilBlockGo(b *il.ILBlock, cout chan<- string) {
 	case il.ILDataAddVector:
 		cout <- fmt.Sprintf("dataaddvector(%#v)", b.GetVector())
 	case il.ILDataSet:
-		cout <- fmt.Sprintf("dataset(%d)", b.GetParam())
+		cout <- fmt.Sprintf("dataset(%d)", byte(b.GetParam()))
 	default:
 		panic("Encountered an unknown ILBlock type.")
 	}
