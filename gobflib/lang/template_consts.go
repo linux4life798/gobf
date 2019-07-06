@@ -13,7 +13,10 @@ import (
 {{ if .ProfilingEnabled }}
 import (
 	"crypto/sha1"
+	"flag"
 	"time"
+	"runtime"
+	"runtime/pprof"
 )
 {{ end }}
 
@@ -117,6 +120,26 @@ func errorHandler() {
 func main() {
 	defer errorHandler()
 
+	{{ if .ProfilingEnabled }}
+	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+	var memprofile = flag.String("memprofile", "", "write memory profile to file")
+	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to create CPU profile:", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to start CPU profile:", err)
+			os.Exit(1)
+		}
+		defer pprof.StopCPUProfile()
+	}
+	{{ end }}
+
 	data = make([]byte, {{ .InitialDataSize }})
 
 	{{ if .ProfilingEnabled }}
@@ -128,6 +151,22 @@ func main() {
 
 	{{ if .ProfilingEnabled }}
 	profProgramEnd()
+	{{ end }}
+
+	{{ if .ProfilingEnabled }}
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to create memory profile:", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			fmt.Fprintln(os.Stderr, "Failed to write memory profile:", err)
+			os.Exit(1)
+		}
+	}
 	{{ end }}
 }
 `
