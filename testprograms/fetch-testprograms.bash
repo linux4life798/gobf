@@ -1,8 +1,12 @@
 #!/bin/bash
 # Craig Hesling
 
+# Move to the directory containing this script
+root=$(dirname $(realpath "$BASH_SOURCE"))
+cd $root
+
 # Generate vectorization's optimial test
-./testprograms/gen-vector-test.bash > testprograms/vector-test.b
+./gen-vector-test.bash > vector-test.b
 
 # Examples:
 # https://github.com/fabianishere/brainfuck/tree/master/examples
@@ -30,8 +34,8 @@ if ! which wget &>/dev/null; then
 	exit 1
 fi
 
-mkdir -p testprograms/interactive testprograms/longrunning
+mkdir -p interactive longrunning
 
-wget -c -P testprograms "${BENCHMARK[@]}"
-wget -c -P testprograms/longrunning "${BENCHMARK_LONG[@]}"
-wget -c -P testprograms/interactive "${INTERACTIVE[@]}"
+wget -c "${BENCHMARK[@]}"
+wget -c -P longrunning "${BENCHMARK_LONG[@]}"
+wget -c -P interactive "${INTERACTIVE[@]}"
