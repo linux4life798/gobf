@@ -51,8 +51,9 @@ echo
 #  3 ops yielded a 0m25.245s [vector] vs 0m31.317s
 #  2 ops yielded a 0m24.190s [vector] vs 0m27.647s
 #  1 ops yielded a 0m18.224s [vector] vs 0m19.120s
-#vector-content 4 10 | loop 3 | loop 2 | loop 1 | loop 0
+# vector-content 4 10 | loop 3 | loop 2 | loop 1 | loop 0
 
+vector-content 3 160 | loop 2 | loop 1 | loop 0
 # vector-content 3 20 | loop 2 | loop 1 | loop 0
-vector-content 2 20 | loop 1 | loop 0
+# vector-content 2 20 | loop 1 | loop 0
 # vector-content 1 20 | loop 0
