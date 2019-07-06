@@ -20,6 +20,7 @@ const (
 	ILRead
 	ILWrite
 	ILDataAddVector
+	ILDataAddLinVector // param is offset of vector
 )
 
 // ILBlock represents an Intermediate Language Block of instruction(s)
@@ -89,6 +90,11 @@ func (b *ILBlock) Dump(out io.Writer, indent int) {
 	case ILDataAdd, ILDataPtrAdd, ILDataSet:
 		fmt.Fprintf(out, " param=%v |", b.param)
 	case ILDataAddVector:
+		fmt.Fprintf(out, " vec=%v |", b.vec)
+		vc, oc := b.vectorCost()
+		fmt.Fprintf(out, " vcost=%d ocost=%d", vc, oc)
+	case ILDataAddLinVector:
+		fmt.Fprintf(out, " off=%v |", b.param)
 		fmt.Fprintf(out, " vec=%v |", b.vec)
 		vc, oc := b.vectorCost()
 		fmt.Fprintf(out, " vcost=%d ocost=%d", vc, oc)
@@ -323,7 +329,7 @@ func (c *voverlay) dataptradd(delta int64) {
 func (b *ILBlock) vectorCost() (vcost, icost int) {
 	const datapaddCost = 1 + 1 + 1         // add, check <0, check readjust
 	const dataaddvecStaticCost = 1 + 1 + 1 // check readjust, slice, bound check
-	if b.typ != ILDataAddVector {
+	if b.typ != ILDataAddVector && b.typ != ILDataAddLinVector {
 		return -1, -1
 	}
 
@@ -515,6 +521,41 @@ func PatternReplaceZero(b *ILBlock) []*ILBlock {
 	}
 }
 
+func PatternReplaceLinearVector(b *ILBlock) []*ILBlock {
+	if b.typ != ILLoop {
+		return nil
+	}
+	if len(b.inner) != 3 {
+		return nil
+	}
+
+	if b.inner[0].typ != ILDataPtrAdd || b.inner[2].typ != ILDataPtrAdd {
+		return nil
+	}
+	if b.inner[1].typ != ILDataAddVector {
+		return nil
+	}
+
+	if !(b.inner[0].param <= 0 && b.inner[2].param >= 0) {
+		return nil
+	}
+
+	if b.inner[0].param != -b.inner[2].param {
+		return nil
+	}
+
+	if len(b.inner[1].vec) <= int(b.inner[2].param) || b.inner[1].vec[b.inner[2].param] != 0xFF {
+		return nil
+	}
+
+	return []*ILBlock{
+		&ILBlock{
+			typ:   ILDataAddLinVector,
+			param: b.inner[0].param,
+			vec:   b.inner[1].vec,
+		},
+	}
+}
 
 func (b *ILBlock) PatternReplace(replacers ...PatternReplacer) int {
 	var count int64

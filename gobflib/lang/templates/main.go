@@ -102,6 +102,32 @@ func dataaddvector(vec []byte) {
 	{{ end }}
 }
 
+// dataaddlvector uses data[datap] as a linear multiplier for values of vec,
+// which are added to value of data starting at offset datap+offset.
+func dataaddlvector(vec []byte, offset int) {
+	// need to check data allocation
+	if l := datap + offset + len(vec) - 1; l >= len(data) {
+		newdata := make([]byte, l*2)
+		copy(newdata, data)
+		data = newdata
+		{{ if .ProfilingEnabled }}
+		dataExpansionCount++
+		{{ end }}
+	}
+
+	var mult = data[datap]
+	if mult == 0 {
+		return
+	}
+
+	var d = data[datap+offset : datap+offset+len(vec)]
+	_ = d[len(vec)-1]
+
+	for i := range vec {
+		d[i] += vec[i] * mult
+	}
+}
+
 func errorHandler() {
 	if r := recover(); r != nil {
 		fmt.Fprintln(os.Stderr, "Error:", r)

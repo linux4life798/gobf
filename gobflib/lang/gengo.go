@@ -51,6 +51,8 @@ func ilBlockGo(b *il.ILBlock, cout chan<- string) {
 		cout <- fmt.Sprintf("writeb(%v)", b.GetParam())
 	case il.ILDataAddVector:
 		cout <- fmt.Sprintf("dataaddvector(%#v)", b.GetVector())
+	case il.ILDataAddLinVector:
+		cout <- fmt.Sprintf("dataaddlvector(%#v, %v)", b.GetVector(), b.GetParam())
 	case il.ILDataSet:
 		cout <- fmt.Sprintf("dataset(%d)", byte(b.GetParam()))
 	default:

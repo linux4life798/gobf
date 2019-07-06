@@ -98,6 +98,14 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 		optimizationCount += iltree.Prune()
 	}
 
+	if optimization["lvec"] {
+		iltree.Vectorize()
+
+		optimizationCount = iltree.PatternReplace(il.PatternReplaceLinearVector)
+		optimizationCount += iltree.Compress()
+		optimizationCount += iltree.Prune()
+	}
+
 	if *debugEnabled {
 		if flagCompress {
 			fmt.Println("Compress Count:        ", compressCount)

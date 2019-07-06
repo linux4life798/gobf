@@ -16,11 +16,12 @@ func _() {
 	_ = x[ILRead-5]
 	_ = x[ILWrite-6]
 	_ = x[ILDataAddVector-7]
+	_ = x[ILDataAddLinVector-8]
 }
 
-const _ILBlockType_name = "ILListILLoopILDataPtrAddILDataAddILDataSetILReadILWriteILDataAddVector"
+const _ILBlockType_name = "ILListILLoopILDataPtrAddILDataAddILDataSetILReadILWriteILDataAddVectorILDataAddLinVector"
 
-var _ILBlockType_index = [...]uint8{0, 6, 12, 24, 33, 42, 48, 55, 70}
+var _ILBlockType_index = [...]uint8{0, 6, 12, 24, 33, 42, 48, 55, 70, 88}
 
 func (i ILBlockType) String() string {
 	if i >= ILBlockType(len(_ILBlockType_index)-1) {
