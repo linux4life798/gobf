@@ -4,7 +4,7 @@ addons:
     packages:
     - wget
 before_script:
-  - ./fetch-testprograms.bash
+  - ./testprograms/fetch-testprograms.bash
 
 language: go
 go:
