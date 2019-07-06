@@ -107,7 +107,6 @@ func dataaddvector(vec []byte) {
 func errorHandler() {
 	if r := recover(); r != nil {
 		fmt.Fprintln(os.Stderr, "Error:", r)
-		fmt.Fprintf(os.Stderr, "Type: %T\n", r)
 		{{ if .ProfilingEnabled }}
 		profProgramEnd()
 		{{ end }}
