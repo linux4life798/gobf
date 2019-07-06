@@ -21,6 +21,12 @@ const (
 
 var debugEnabled *bool
 
+func dprintf(format string, a ...interface{}) {
+	if *debugEnabled {
+		fmt.Printf(format+"\n", a...)
+	}
+}
+
 func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.ILBlock, error) {
 	flagCompress, _ := cmd.Flags().GetBool("compress")
 	flagPrune, _ := cmd.Flags().GetBool("prune")
@@ -35,7 +41,7 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 		optimization[opt] = true
 	}
 
-	// fsize := finfo.Size()
+	dprintf("Reading BF Program")
 	prgm := NewBFProgram(uint64(bfinputsize), defaultDataSize)
 	prgm.ReadCommands(bfinput)
 
@@ -45,16 +51,21 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 	var vectorBalanceCount int
 	var optimizationCount int
 
+	dprintf("Generating IL Representation")
 	iltree := prgm.CreateILTree()
 	if flagCompress {
+		dprintf("Compressing IL")
 		compressCount += iltree.Compress()
 	}
 	if flagPrune {
+		dprintf("Pruning IL")
 		pruneCount += iltree.Prune()
 	}
 	if flagVectorize {
+		dprintf("Vectoring IL")
 		vectorizeCount = iltree.Vectorize()
 		if !flagFullVectorize {
+			dprintf("Rebalancing Vectorized IL")
 			vectorBalanceCount = iltree.VectorBalance()
 		}
 
@@ -63,8 +74,11 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 		// ILDataAdd     1
 
 		// prune possible datapadd(0) after vector replace
+		dprintf("Pruning IL")
 		pruneCount += iltree.Prune()
+		dprintf("Compressing IL")
 		compressCount += iltree.Compress()
+		dprintf("Pruning IL")
 		pruneCount += iltree.Prune()
 
 		if count := iltree.Compress(); count > 0 {
@@ -76,8 +90,11 @@ func prepareIL(cmd *cobra.Command, bfinput io.Reader, bfinputsize int64) (*il.IL
 	}
 
 	if optimization["zero"] {
+		dprintf("Pattern Zero Replacing IL")
 		optimizationCount = iltree.PatternReplace(il.PatternReplaceZero)
+		dprintf("Compressing IL")
 		optimizationCount += iltree.Compress()
+		dprintf("Pruning IL")
 		optimizationCount += iltree.Prune()
 	}
 
@@ -245,6 +262,7 @@ func BFCompile(cmd *cobra.Command, args []string) {
 		outputfilename = basename
 	}
 
+	dprintf("Compiling IL")
 	err, tempdir := lang.CompileIL(il, outputfilename, *debugEnabled, flagProfile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error - %v", err)
