@@ -1,6 +1,19 @@
 #!/bin/bash
 # Craig Hesling
 
+check_installed() {
+	local prgm=$1
+
+	if ! which "$prgm" &>/dev/null; then
+		echo "Error - $prgm is not installed." >&2
+		exit 1
+	fi
+}
+
+check_installed wget
+check_installed realpath
+check_installed dirname
+
 # Move to the directory containing this script
 root="$(dirname $(realpath "$BASH_SOURCE"))"
 cd "$root"
