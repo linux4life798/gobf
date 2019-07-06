@@ -122,9 +122,6 @@ func CompileGo(infile, outfile string, debugenabled bool, gccgo bool) error {
 	if gccgo {
 		args = append(args, "-compiler", "gccgo")
 	}
-	if debugenabled {
-		args = append(args, "-v", "-x")
-	}
 	args = append(args, "-o", outfile, infile)
 
 	gobuild := exec.Command("go", args...)
