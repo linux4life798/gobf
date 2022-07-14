@@ -9,7 +9,26 @@ on:
 jobs:
 
   build:
+    # Explicitly define each test platform target.
+    strategy:
+      matrix:
+        include:
+        - GOOS: linux
+          GOARCH: amd64
+        - GOOS: linux
+          GOARCH: arm
+        - GOOS: linux
+          GOARCH: mips
+        - GOOS: windows
+          GOARCH: amd64
+        - GOOS: darwin
+          GOARCH: amd64
+
     runs-on: ubuntu-latest
+    env:
+      GOOS: ${{ matrix.GOOS }}
+      GOARCH: ${{ matrix.GOARCH }}
+
     steps:
     - uses: actions/checkout@v3
 
