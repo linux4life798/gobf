@@ -25,9 +25,6 @@ jobs:
           GOARCH: amd64
 
     runs-on: ubuntu-latest
-    env:
-      GOOS: ${{ matrix.GOOS }}
-      GOARCH: ${{ matrix.GOARCH }}
 
     steps:
     - uses: actions/checkout@v3
@@ -38,6 +35,9 @@ jobs:
         go-version: 1.18
 
     - name: Build
+      env:
+        GOOS: ${{ matrix.GOOS }}
+        GOARCH: ${{ matrix.GOARCH }}
       run: go build -v ./
 
     - name: Fetch test programs
