@@ -38,7 +38,9 @@ jobs:
       env:
         GOOS: ${{ matrix.GOOS }}
         GOARCH: ${{ matrix.GOARCH }}
-      run: go build -v ./
+      run: |
+        go build -v ./
+        file ./gobf*
 
     - name: Fetch test programs
       run: ./testprograms/fetch-testprograms.bash
