@@ -1,4 +1,4 @@
-[![Godoc](https://godoc.org/github.com/linux4life798/gobf/gobflib?status.png)](https://godoc.org/github.com/linux4life798/gobf/gobflib)
+[![Go Reference](https://pkg.go.dev/badge/github.com/linux4life798/gobf/gobflib.svg)](https://pkg.go.dev/github.com/linux4life798/gobf/gobflib)
 [![Go Build/Test](https://github.com/linux4life798/gobf/actions/workflows/go.yml/badge.svg)](https://github.com/linux4life798/gobf/actions/workflows/go.yml)
 [![CodeQL](https://github.com/linux4life798/gobf/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/linux4life798/gobf/actions/workflows/codeql-analysis.yml)
 
