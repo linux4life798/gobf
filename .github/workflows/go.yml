@@ -19,7 +19,16 @@ jobs:
         go-version: 1.18
 
     - name: Build
-      run: go build -v ./...
+      run: go build -v ./
+
+    - name: Fetch test programs
+      run: ./testprograms/fetch-testprograms.bash
 
     - name: Test
-      run: go test -v ./...
+      run: |
+        go test -v ./gobflib
+        go test -v ./gobflib/il
+        go test -v -bench=. ./gobflib
+
+    - name: Check That gen-vector-test.bash script succeeds.
+      run: ./testprograms/gen-vector-test.bash
