@@ -6,7 +6,7 @@ import (
 )
 
 // BenchmarkZeroPatternReplace tests the optimization benefits from
-// from doing a zero pattern replacement.
+// doing a zero pattern replacement.
 func BenchmarkZeroPatternReplace(b *testing.B) {
 	var data = make([]byte, 10)
 	var datap int
@@ -43,7 +43,7 @@ func BenchmarkZeroPatternReplace(b *testing.B) {
 }
 
 // BenchmarkAddPatternReplace tests the optimization benefits from
-// from doing an add pattern replacement.
+// doing an add pattern replacement.
 func BenchmarkAddPatternReplace(b *testing.B) {
 	var data = make([]byte, 10)
 	var datap int
@@ -79,7 +79,7 @@ func BenchmarkAddPatternReplace(b *testing.B) {
 }
 
 // BenchmarkMultiplyPatternReplace tests the optimization benefits from
-// from doing an multiply pattern replacement.
+// doing a multiply pattern replacement.
 func BenchmarkMultiplyPatternReplace(b *testing.B) {
 	const multiplier byte = 94
 	var data = make([]byte, 10)
