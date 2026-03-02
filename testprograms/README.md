@@ -1,7 +1,7 @@
 # Test Programs
 
-This is a reporsitory of BF programs I have collected to allow reliable
-performance testing this complier.
+This is a repository of BF programs I have collected to allow reliable
+performance testing this compiler.
 In no way do I take credit for writing these beautiful BF programs.
 Thank you to all the authors who worked to create them.
 Please submit an issue or PR for any corrections.
