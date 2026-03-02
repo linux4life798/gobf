@@ -210,7 +210,7 @@ func (b *ILBlock) Compress() int {
 				lastb = ib
 			}
 		case ILDataSet:
-			/* Overrive a previous ILDataSet or ILDataAdd(interesting eh?) */
+			/* Override a previous ILDataSet or ILDataAdd(interesting eh?) */
 			if lastb != nil {
 				switch lastb.typ {
 				case ILDataSet, ILDataAdd:
@@ -242,7 +242,7 @@ func (b *ILBlock) Compress() int {
 	return int(count)
 }
 
-// isPruneable uses a set of rules to determine id an ILBlock
+// isPruneable uses a set of rules to determine if an ILBlock
 // node is able to be removed.
 func (b *ILBlock) isPruneable() bool {
 	if b == nil {

@@ -18,7 +18,7 @@ check_installed dirname
 root="$(dirname $(realpath "$BASH_SOURCE"))"
 cd "$root"
 
-# Generate vectorization's optimial test
+# Generate vectorization's optimal test
 ./gen-vector-test.bash > vector-test.b
 
 # Examples:

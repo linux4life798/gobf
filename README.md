@@ -13,7 +13,7 @@ go get github.com/linux4life798/gobf
 ```
 
 ## Usage
-The commandline program currently supports `compile`, `gengo`,
+The command-line program currently supports `compile`, `gengo`,
 `run`, and `dumpil` actions.
 
 Give it a try!

@@ -4,7 +4,7 @@
 # each of which count down from 255 to 0. The inner-most operation
 # is series of +'s in consecutive cells.
 #
-# The idea is to generate a hand crafet case, where vectorizing the inner-most
+# The idea is to generate a handcrafted case, where vectorizing the inner-most
 # operation yields great performance gains.
 
 
