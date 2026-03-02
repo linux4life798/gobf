@@ -9,7 +9,7 @@ GoBF can simply run your BF program or compile it to a binary to run later.
 
 ## Obligatory Install Line
 ```sh
-go get github.com/linux4life798/gobf
+go install github.com/linux4life798/gobf@latest
 ```
 
 ## Usage
@@ -18,7 +18,7 @@ The command-line program currently supports `compile`, `gengo`,
 
 Give it a try!
 ```sh
-go get github.com/linux4life798/gobf
+go install github.com/linux4life798/gobf@latest
 
 wget https://github.com/erikdubbelboer/brainfuck-jit/raw/master/mandelbrot.bf
 gobf compile mandelbrot.bf
