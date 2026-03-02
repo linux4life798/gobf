@@ -37,9 +37,9 @@ like data pointer moves or incrementing a data cell.
 It coalesces multiple moves or data cell changes into one operation.
 Due to BF's repetitive nature, this typically increases the BF program's
 performance dramatically. All of the interesting optimization stuff
-is in [gobflib/il](gobflib/il) package.
+is in the [gobflib/il](gobflib/il) package.
 
-Recent work has added some pattern and vectorization based optimizations,
+Recent work has added some pattern-based and vectorization-based optimizations,
 but these have not been fully calibrated yet.
 
 To try the zero pattern optimization, invoke gobf in the following manner:
